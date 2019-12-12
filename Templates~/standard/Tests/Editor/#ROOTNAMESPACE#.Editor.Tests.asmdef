@@ -1,0 +1,14 @@
+{
+    "name": "#ROOTNAMESPACE#.Editor.Tests",
+    "references": [
+        "#ROOTNAMESPACE#.Editor",
+        "#ROOTNAMESPACE#"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

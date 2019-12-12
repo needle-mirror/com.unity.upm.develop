@@ -1,0 +1,10 @@
+{
+    "name": "#ROOTNAMESPACE#.Editor",
+    "references": [
+      "#ROOTNAMESPACE#"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

@@ -1,0 +1,17 @@
+:root {
+    /* Pure theme colors */
+    --unity-background: #383838;
+}
+
+#testList {
+    background-color: rgb(55, 55, 55);
+}
+
+#reportRow.selected {
+    background-color: #3c5f91;
+    color: #F4F4F4;
+}
+
+#details TextInput {
+    background-color: #383838;
+}

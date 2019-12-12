@@ -1,0 +1,70 @@
+PrepareTools {
+    flex-direction: row;
+}
+
+#reportRow {
+    flex-direction: row;
+    align-items: center;
+    
+    margin-bottom: 2px;
+}
+
+#reportRow #icon {
+    min-height: 16px;
+    min-width: 16px;
+    max-height: 16px;
+    max-width: 16px;
+}
+
+#reportRow Label {
+    margin-bottom: 0px;
+
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+#splitter {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    
+    border-color: #000000;
+    border-top-width: 1px;
+    
+    cursor: split-resize-up-down;
+}
+
+#details {
+    flex-wrap: wrap;
+    white-space: normal;
+}
+
+#details TextInput {
+    background-image: none;
+    border-width: 0;
+}
+
+#testList {
+    min-height: 150px;
+    flex-grow: 1;
+    
+    padding-top: 2px;
+}
+
+#detailsContainer {
+    min-height: 100px;
+}
+
+#summary {
+    flex: 1 0 auto;
+    border-color: #000000;
+    border-bottom-width: 1px;
+    margin-bottom: 0;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 4px;
+}
+
+#header {
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}

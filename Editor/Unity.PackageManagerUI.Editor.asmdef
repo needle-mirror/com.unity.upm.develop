@@ -1,0 +1,14 @@
+{
+    "name": "Unity.PackageManagerUI.Develop.Editor",
+    "references": ["Unity.PackageValidationSuite.Editor"],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}

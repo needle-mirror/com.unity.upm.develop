@@ -1,0 +1,11 @@
+{
+    "name": "#ROOTNAMESPACE#.Tests",
+    "references": [
+        "#ROOTNAMESPACE#"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}
