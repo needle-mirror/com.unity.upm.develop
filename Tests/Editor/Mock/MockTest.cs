@@ -1,12 +1,12 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework.Interfaces;
 using UnityEditor.TestTools.TestRunner.Api;
 using RunState = UnityEditor.TestTools.TestRunner.Api.RunState;
 
-namespace Unity.PackageManagerUI.Develop.Editor.Tests {
-    class MockTest : ITestAdaptor
+namespace Unity.PackageManagerUI.Develop.Editor.Tests
+{
+    public class MockTest : ITestAdaptor
     {
         public string Id { get; set; }
         public string Name { get; set; }
@@ -43,7 +43,7 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests {
             IsTestAssembly = true;
             RunState = RunState.Runnable;
         }
-        
+
         static public MockTest CreateSimple()
         {
             return new MockTest();

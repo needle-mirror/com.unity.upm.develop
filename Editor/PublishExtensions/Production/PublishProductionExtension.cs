@@ -1,18 +1,17 @@
-using System;
 using UnityEditor;
 using UnityEditor.PackageManager.UI;
 using UnityEngine;
-using UnityEngine.UIElements;
 using UnityEditor.PackageManager.ValidationSuite;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
+namespace Unity.PackageManagerUI.Develop.Editor
+{
     /// <summary>
     /// This class sets up validation for internal publishing. It does not allow publishing by itself.
     /// </summary>
     [InitializeOnLoad]
     internal class PublishProductionExtension : IPublishExtension
     {
-        public string Name => "Validate For Production - (Internal)";
+        public string name => "Validate For Production - (Internal)";
 
         public void OnPublish(IPackageVersion packageVersion)
         {
@@ -22,10 +21,10 @@ namespace Unity.PackageManagerUI.Develop.Editor {
                 return;
             }
 
-            ValidationSuite.ValidatePackage(packageVersion.versionId(), ValidationType.Publishing);
+            ValidationSuite.ValidatePackage(packageVersion.VersionId(), ValidationType.Publishing);
             ValidationSuiteReportWindow.Open(packageVersion);
         }
-        
+
         static PublishProductionExtension()
         {
             if (!Unsupported.IsDeveloperMode())

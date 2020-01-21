@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework.Internal;
 using UnityEditor.TestTools.TestRunner.Api;
 
-namespace Unity.PackageManagerUI.Develop.Editor.Tests {
+namespace Unity.PackageManagerUI.Develop.Editor.Tests
+{
     class MockTestRunnerApi : ITestRunnerApi
     {
-        internal ICallbacks Callback;
-        
-        internal MockTest EditModeTests = new MockTest();
-        internal MockTest PlayModeTests = new MockTest();
+        internal ICallbacks callback;
 
-        internal int EditModeTestCount = 0;
-        internal int PlayModeTestCount = 0;
+        internal MockTest editModeTests = new MockTest();
+        internal MockTest playModeTests = new MockTest();
+
+        internal int editModeTestCount = 0;
+        internal int playModeTestCount = 0;
 
         public PackageTestRunner packageTestRunner;
 
@@ -29,43 +29,43 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests {
                 };
 
                 if (executionSettings.filter.testMode == TestMode.EditMode)
-                    EditModeTestCount = result.PassCount;
+                    editModeTestCount = result.PassCount;
                 if (executionSettings.filter.testMode == TestMode.PlayMode)
-                    PlayModeTestCount = result.PassCount;
+                    playModeTestCount = result.PassCount;
 
-                Callback.RunFinished(result);
+                callback.RunFinished(result);
             });
             return Guid.NewGuid().ToString();
         }
 
         public void RegisterCallbacks<T>(T testCallbacks, int priority = 0) where T : ICallbacks
         {
-            Callback = testCallbacks;
+            callback = testCallbacks;
         }
 
         public void UnregisterCallbacks<T>(T testCallbacks) where T : ICallbacks
         {
-            Callback = null;
+            callback = null;
         }
-        
+
         public void RetrieveTestList(TestMode testMode, Action<ITestAdaptor> callback)
         {
             var testList = new MockTest { Name = "Mock Root" };
             var list = new List<ITestAdaptor>();
             testList.Children = list;
 
-            var assemblyNames = packageTestRunner.GetAllPackageTestAssemblies(packageTestRunner.PackageVersion);
+            var assemblyNames = packageTestRunner.GetAllPackageTestAssemblies();
 
             if (testMode.HasFlag(TestMode.EditMode))
             {
-                EditModeTests.Name = assemblyNames.FirstOrDefault() + ".dll";
-                list.Add(EditModeTests);
+                editModeTests.Name = assemblyNames.FirstOrDefault() + ".dll";
+                list.Add(editModeTests);
             }
 
             if (testMode.HasFlag(TestMode.PlayMode))
             {
-                PlayModeTests.Name = assemblyNames.FirstOrDefault() + ".dll";
-                list.Add(PlayModeTests);
+                playModeTests.Name = assemblyNames.FirstOrDefault() + ".dll";
+                list.Add(playModeTests);
             }
 
             callback(testList);

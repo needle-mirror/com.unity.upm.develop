@@ -4,10 +4,12 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEditorInternal;
 using TemplateVariables = System.Collections.Generic.Dictionary<string, string>;
 
-namespace UnityEditor.PackageManager
+namespace Unity.PackageManagerUI.Develop.Editor
 {
     internal static class PackageTemplate
     {
@@ -82,7 +84,7 @@ namespace UnityEditor.PackageManager
                 errors.Add(string.Format(requiredErrorMessage, nameof(options.name)));
             else if (!PackageValidation.ValidateName(options.name))
                 errors.Add(string.Format(L10n.Tr("Package name [{0}] is invalid"), options.name));
-            else if (PackageInfo.GetAll().Any(p => p.name == options.name))
+            else if (UnityEditor.PackageManager.PackageInfo.GetAll().Any(p => p.name == options.name))
                 errors.Add(string.Format(L10n.Tr("The project already contains a package with the name [{0}]."), options.name));
 
             options.displayName = options.displayName?.Trim();

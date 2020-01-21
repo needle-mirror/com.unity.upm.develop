@@ -1,23 +1,23 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
+namespace Unity.PackageManagerUI.Develop.Editor
+{
     internal static class PackageManagerDevelopExtensions
     {
+        internal static List<IPublishExtension> publishExtensions { get { return m_PublishExtensions ?? (m_PublishExtensions = new List<IPublishExtension>()); } }
+        private static List<IPublishExtension> m_PublishExtensions;
+
+        /// <summary>
+        /// Returns Package Manager UI publish extension which match given name. If none returns null
+        /// </summary>
+        /// <param name="name">A Package Manager UI publish extension name to find</param>
+        /// <returns></returns>
         public static IPublishExtension GetPublishExtension(string name)
         {
-            foreach (var extension in PackageManagerDevelopExtensions.PublishExtensions)
-            {
-                if (extension.Name == name)
-                    return extension;
-            }
-
-            return null;
+            return publishExtensions.FirstOrDefault(extension => extension.name == name);
         }
-        
-        internal static List<IPublishExtension> PublishExtensions { get { return publishExtensions ?? (publishExtensions = new List<IPublishExtension>()); } }
-        static List<IPublishExtension> publishExtensions;
-    
+
         /// <summary>
         /// Registers a new Package Manager UI publish extension
         /// </summary>
@@ -27,7 +27,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
             if (publishExtension == null)
                 return;
 
-            PublishExtensions.Add(publishExtension);
+            publishExtensions.Add(publishExtension);
         }
     }
 }

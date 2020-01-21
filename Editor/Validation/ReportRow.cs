@@ -4,16 +4,17 @@ using UnityEditor.TestTools.TestRunner.GUI;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
-    class ReportRow : VisualElement
+namespace Unity.PackageManagerUI.Develop.Editor
+{
+    internal class ReportRow : VisualElement
     {
-        public event Action<ReportRow> OnSelected = delegate { };
-        
-        public ValidationTestReport Test { get; }
+        public event Action<ReportRow> onSelected = delegate {};
+
+        public ValidationTestReport test { get; }
 
         public ReportRow(ValidationTestReport test, Action<ReportRow> onSelected = null)
         {
-            Test = test;
+            this.test = test;
             this.name = "reportRow";
 
             var icon = new VisualElement();
@@ -24,12 +25,12 @@ namespace Unity.PackageManagerUI.Develop.Editor {
             var name = new Label(test.TestName);
             Add(name);
 
-            RegisterCallback<MouseDownEvent>(evt => OnSelected(this));
+            RegisterCallback<MouseDownEvent>(evt => onSelected(this));
 
             if (onSelected != null)
-                OnSelected += onSelected;
+                onSelected += onSelected;
         }
-        
+
         static Texture2D GetTestIcon(ValidationTestReport test)
         {
             if (test.TestState == TestState.Failed)
@@ -44,6 +45,6 @@ namespace Unity.PackageManagerUI.Develop.Editor {
                 return Icons.s_IgnoreImg;
 
             return Icons.s_UnknownImg;
-        }        
+        }
     }
 }

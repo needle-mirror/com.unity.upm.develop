@@ -1,12 +1,10 @@
-using System;
 using UnityEditor;
 using UnityEditor.PackageManager.UI;
-using UnityEngine;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
     [InitializeOnLoad]
-    class Extension
+    internal class Extension
     {
         static Extension()
         {

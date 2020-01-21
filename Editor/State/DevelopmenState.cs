@@ -1,53 +1,52 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using Object = System.Object;
+using UnityEditor.PackageManager.UI;
 
-
-namespace UnityEditor.PackageManager.UI
+namespace Unity.PackageManagerUI.Develop.Editor
 {
     [Serializable]
-    class DevelopmentState
+    internal class DevelopmentState
     {
-        public event Action<DevelopmentState> OnDevelopmentStateUpdate = delegate { };
+        public event Action<DevelopmentState> onDevelopmentStateUpdate = delegate {};
 
-        public string PackageName;
-
-        [SerializeField]
-        string publishTarget;
-        public string PublishTarget {  get { return publishTarget; }  set => SetStatus(ref publishTarget, value);  }
+        public string packageName;
 
         [SerializeField]
-        DropdownStatus test;
-        public DropdownStatus Test { get { return test; } set => SetStatus(ref test, value);
+        private string m_PublishTarget;
+        public string publishTarget {  get { return m_PublishTarget; }  set => SetStatus(ref m_PublishTarget, value);  }
+
+        [SerializeField]
+        private DropdownStatus m_Test;
+        public DropdownStatus test
+        {
+            get { return m_Test; } set => SetStatus(ref m_Test, value);
         }
-        internal bool IsTestSuccess => Test == DropdownStatus.Success;
-        
+        internal bool isTestSuccess => test == DropdownStatus.Success;
+
         public DevelopmentState(string packageName)
         {
-            PackageName = packageName;
+            this.packageName = packageName;
             InitLists();
         }
-        
+
         /// <summary>
         /// Set the status of a property to a value and broadcast change
         /// </summary>
-        void SetStatus<T>(ref T property, T value)
+        private void SetStatus<T>(ref T property, T value)
         {
-            if (object.Equals(property,value))
+            if (Equals(property, value))
                 return;
 
             property = value;
-            OnDevelopmentStateUpdate(this);            
+            onDevelopmentStateUpdate(this);
         }
 
         public void InitLists(bool reset = false)
         {
             if (reset)
             {
-                test = DropdownStatus.None;
-                publishTarget = "";
+                m_Test = DropdownStatus.None;
+                m_PublishTarget = "";
             }
         }
 
@@ -55,12 +54,12 @@ namespace UnityEditor.PackageManager.UI
         {
             InitLists(true);
 
-            OnDevelopmentStateUpdate(this);
+            onDevelopmentStateUpdate(this);
         }
 
         public void SetTest(bool status)
         {
-            Test = status ? DropdownStatus.Success : DropdownStatus.Error;
-        }        
+            test = status ? DropdownStatus.Success : DropdownStatus.Error;
+        }
     }
 }

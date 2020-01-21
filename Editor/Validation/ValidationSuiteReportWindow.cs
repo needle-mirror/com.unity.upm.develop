@@ -1,64 +1,64 @@
 using UnityEngine;
-using System;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.PackageManager.UI;
 using UnityEditor.PackageManager.ValidationSuite;
 using Resources = UnityEngine.Resources;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
-    class ValidationSuiteReportWindow : EditorWindow
+namespace Unity.PackageManagerUI.Develop.Editor
+{
+    internal class ValidationSuiteReportWindow : EditorWindow
     {
-        ValidationSuiteReport Report { get; set; }
+        private ValidationSuiteReport m_Report { get; set; }
 
         [SerializeField]
-        IPackageVersion PackageVersion;
+        private IPackageVersion m_PackageVersion;
         [SerializeField]
-        ValidationTestReport SelectedTest;
+        private ValidationTestReport m_SelectedTest;
         [SerializeField]
-        ValidationSuiteReportData ReportData;
+        private ValidationSuiteReportData m_ReportData;
 
         public void OnEnable()
         {
-            Report = new ValidationSuiteReport();            
-            rootVisualElement.Add(Report);
+            m_Report = new ValidationSuiteReport();
+            rootVisualElement.Add(m_Report);
 
-            Report.OnSelected += OnSelected;
+            m_Report.onSelected += OnSelected;
 
-            if (PackageVersion != null)
-                SetPackageVersion(PackageVersion, ReportData);
-            
-            if (SelectedTest != null)
-                Report.SelectRow(SelectedTest);
+            if (m_PackageVersion != null)
+                SetPackageVersion(m_PackageVersion, m_ReportData);
+
+            if (m_SelectedTest != null)
+                m_Report.SelectRow(m_SelectedTest);
         }
 
         void OnSelected(ValidationTestReport selected)
         {
-            SelectedTest = selected;
+            m_SelectedTest = selected;
         }
 
         // Work-around to stop dragging when outside the window. Until a proper drag exists
         void OnGUI()
         {
-            if (Report.Dragging && this != mouseOverWindow)
-                Report.Dragging = false;
+            if (m_Report.isDragging && this != mouseOverWindow)
+                m_Report.isDragging = false;
         }
 
         void SetPackageVersion(IPackageVersion packageVersion, ValidationSuiteReportData reportData = null)
         {
-            PackageVersion = packageVersion;
-            ReportData = reportData ?? ValidationSuite.GetReport(PackageVersion.versionId());
-            
-            Report?.Init(PackageVersion, ReportData);
+            m_PackageVersion = packageVersion;
+            m_ReportData = reportData ?? ValidationSuite.GetReport(m_PackageVersion.VersionId());
+
+            m_Report?.Init(m_PackageVersion, m_ReportData);
         }
 
         public static void Open(IPackageVersion packageVersion)
         {
             if (IsOpenedWith(packageVersion))
                 return;
-            if (!ValidationSuite.JsonReportExists(packageVersion.versionId()))
+            if (!ValidationSuite.JsonReportExists(packageVersion.VersionId()))
                 return;
-            
+
             var dialog = GetWindow<ValidationSuiteReportWindow>(false, "Validation", true);
             dialog.SetPackageVersion(packageVersion);
             dialog.minSize = new Vector2(750, 350);
@@ -67,7 +67,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
 
         public static void UpdateIfOpened(IPackageVersion packageVersion)
         {
-            if (IsOpen() && packageVersion != null && ValidationSuite.JsonReportExists(packageVersion.versionId()))
+            if (IsOpen() && packageVersion != null && ValidationSuite.JsonReportExists(packageVersion.VersionId()))
                 Open(packageVersion);
         }
 
@@ -78,7 +78,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
 
         public static bool IsOpenedWith(IPackageVersion packageVersion)
         {
-            return Resources.FindObjectsOfTypeAll<ValidationSuiteReportWindow>().Any(window => window.PackageVersion == packageVersion);
+            return Resources.FindObjectsOfTypeAll<ValidationSuiteReportWindow>().Any(window => window.m_PackageVersion == packageVersion);
         }
     }
 }

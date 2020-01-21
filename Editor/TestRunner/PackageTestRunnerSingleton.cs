@@ -2,21 +2,22 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
+namespace Unity.PackageManagerUI.Develop.Editor
+{
     [Serializable]
-    class PackageTestRunnerSingleton : ScriptableSingleton<PackageTestRunnerSingleton>
+    internal class PackageTestRunnerSingleton : ScriptableSingleton<PackageTestRunnerSingleton>
     {
         [SerializeField]
-        PackageTestRunner _PackageTestRunner;
+        private PackageTestRunner m_PackageTestRunner;
 
-        public PackageTestRunner PackageTestRunner
+        public PackageTestRunner packageTestRunner
         {
             get
             {
-                if (_PackageTestRunner == null)
-                    _PackageTestRunner = new PackageTestRunner();
+                if (m_PackageTestRunner == null)
+                    m_PackageTestRunner = new PackageTestRunner();
 
-                return _PackageTestRunner;
+                return m_PackageTestRunner;
             }
         }
     }

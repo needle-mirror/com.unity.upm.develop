@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.PackageManager.UI;
 using UnityEditor.Scripting.ScriptCompilation;
 using UnityEditor.TestTools.TestRunner;
 using UnityEditor.TestTools.TestRunner.Api;
@@ -12,55 +11,45 @@ using UnityEngine;
 namespace Unity.PackageManagerUI.Develop.Editor
 {
     [Serializable]
-    class PackageTestRunner
+    internal class PackageTestRunner
     {
-        internal static string NoTestMessage = "There are no tests in this package. Your package is required to have tests.";
-        internal string TestCompleteMessage = "All tests completed!";
+        internal const string k_NoTestMessage = "There are no tests in this package. Your package is required to have tests.";
+        internal static string s_TestCompleteMessage = "All tests completed!";
 
-        public event Action<bool, IPackageVersion> OnTestResultsUpdate = delegate { };
-        public event Action OnTestResultsEnded = delegate { };
-        
+        public event Action<bool, string> onTestResultsUpdate = delegate {};
+        public event Action onTestResultsEnded = delegate {};
+
         [NonSerialized]
-        PackageTestResultUpdater packageTestResultUpdater;
-        bool Running { get { return TestMode != 0 || Current != 0; } }
+        private PackageTestResultUpdater m_PackageTestResultUpdater;
+        bool isRunning { get { return m_TestMode != 0 || m_Current != 0; } }
 
         [SerializeField]
-        TestMode TestMode = 0;
+        private TestMode m_TestMode = 0;
         [SerializeField]
-        TestMode Current = 0;
-        
-        // Necessary to keep concrete objects in order to serialize and survive domain reload 
-        [SerializeField]
-        MockPackageVersion mockPackageVersion;
-        [SerializeField]
-        UpmPackageVersion upmPackageVersion;
+        private TestMode m_Current = 0;
 
-        public IPackageVersion PackageVersion
+        // Necessary to keep concrete objects in order to serialize and survive domain reload
+        [SerializeField]
+        private string m_PackageName;
+
+        [SerializeField]
+        private int m_TestCaseCount;
+        [SerializeField]
+        private int m_TestCasePassedCount;
+
+        [NonSerialized]
+        private ITestRunnerApi m_Api;
+        public ITestRunnerApi api
         {
             get
             {
-                if (mockPackageVersion != null)
-                    return mockPackageVersion;
-
-                return upmPackageVersion;
+                if (m_Api == null)
+                    m_Api = ScriptableObject.CreateInstance<TestRunnerApi>();
+                return m_Api;
             }
-        }
-
-        [SerializeField]
-        internal int TestCaseCount;
-        [SerializeField]
-        internal int TestCasePassedCount;
-        
-        [NonSerialized]
-        internal ITestRunnerApi _Api;
-        ITestRunnerApi Api
-        {
-            get
+            set
             {
-                if (_Api == null)
-                    _Api = ScriptableObject.CreateInstance<TestRunnerApi>();
-
-                return _Api;
+                m_Api = value;
             }
         }
 
@@ -68,77 +57,77 @@ namespace Unity.PackageManagerUI.Develop.Editor
         {
             RegisterCallbacks();
         }
-        
+
         public void UnRegisterCallbacks()
         {
-            // Only de-register to TestRunner callbacks if we were already registered
-            if (packageTestResultUpdater != null)
+            // Only unregister to TestRunner callbacks if we were already registered
+            if (m_PackageTestResultUpdater != null)
             {
-                packageTestResultUpdater.OnRunFinished -= OnRunFinished;
+                m_PackageTestResultUpdater.onRunFinished -= OnRunFinished;
 
-                Api.UnregisterCallbacks(packageTestResultUpdater);                
-            }            
+                api.UnregisterCallbacks(m_PackageTestResultUpdater);
+            }
         }
 
         internal void RegisterCallbacks()
         {
             UnRegisterCallbacks();
 
-            packageTestResultUpdater = new PackageTestResultUpdater();
-            packageTestResultUpdater.OnRunFinished += OnRunFinished;
+            m_PackageTestResultUpdater = new PackageTestResultUpdater();
+            m_PackageTestResultUpdater.onRunFinished += OnRunFinished;
 
-            Api.RegisterCallbacks(packageTestResultUpdater);
+            api.RegisterCallbacks(m_PackageTestResultUpdater);
         }
 
         void OnRunFinished(ITestResultAdaptor testResults)
         {
             // Only process runs we started
-            if (Running)
+            if (isRunning)
             {
-                Current = 0;
-                TestCasePassedCount += testResults != null ? testResults.PassCount : 0;
+                m_Current = 0;
+                m_TestCasePassedCount += testResults != null ? testResults.PassCount : 0;
 
-                // We consider runs with skipped tests as passed (and null results means no test for this test mode, which we consider passed also) 
-				var passed = // There must be at least one test
-                             testResults == null || 
-                             (testResults.TestStatus == TestStatus.Passed || testResults.TestStatus == TestStatus.Skipped);
-				
-				// There must be at least one test total
-                if (TestMode == 0 && TestCasePassedCount == 0)
+                // We consider runs with skipped tests as passed (and null results means no test for this test mode, which we consider passed also)
+                var passed = // There must be at least one test
+                    testResults == null ||
+                    (testResults.TestStatus == TestStatus.Passed || testResults.TestStatus == TestStatus.Skipped);
+
+                // There must be at least one test total
+                if (m_TestMode == 0 && m_TestCasePassedCount == 0)
                     passed = false;
 
-                if (TestMode != 0 && passed)
+                if (m_TestMode != 0 && passed)
                 {
                     Run();
                 }
                 else
                 {
                     //
-                    // Test Run is completed                    
+                    // Test Run is completed
                     if (passed)
-                        Debug.Log(TestCompleteMessage + Environment.NewLine + "    " + TestCaseCount +" tests were run.");
+                        Debug.Log(s_TestCompleteMessage + Environment.NewLine + "    " + m_TestCaseCount + " tests were run.");
                     else
                     {
-                        if (TestCasePassedCount == 0) 
-                            Debug.LogWarning(NoTestMessage);
+                        if (m_TestCasePassedCount == 0)
+                            Debug.LogWarning(k_NoTestMessage);
                         else
                             Debug.LogWarning("Some tests have failed. Please review the test runner for details.");
                     }
 
-                    OnTestResultsUpdate(passed, PackageVersion);
-                    OnTestResultsEnded();
-                    Reset();                    
+                    onTestResultsUpdate(passed, m_PackageName);
+                    onTestResultsEnded();
+                    Reset();
                 }
             }
         }
 
-        IEnumerable<CustomScriptAssemblyData> GetPackageAssemblyNames(string packageName)
+        IEnumerable<CustomScriptAssemblyData> GetPackageAssemblyNames()
         {
-            var packagePath = string.Format("packages/{0}", packageName);
+            var packagePath = string.Format("packages/{0}", m_PackageName);
             if (!Directory.Exists(Path.GetFullPath(packagePath)))
                 return new List<CustomScriptAssemblyData>();
-            
-            var asmdefPaths = AssetDatabase.FindAssets("t:asmdef", new [] {packagePath});
+
+            var asmdefPaths = AssetDatabase.FindAssets("t:asmdef", new[] {packagePath});
             return asmdefPaths.Select(asmdefPath =>
             {
                 var assetPath = AssetDatabase.GUIDToAssetPath(asmdefPath);
@@ -149,11 +138,11 @@ namespace Unity.PackageManagerUI.Develop.Editor
         }
 
         /// <summary>
-        /// Get all package assemblies 
+        /// Get all package assemblies
         /// </summary>
-        public IEnumerable<string> GetAllPackageTestAssemblies(IPackageVersion packageVersion)
+        public IEnumerable<string> GetAllPackageTestAssemblies()
         {
-            return GetPackageAssemblyNames(packageVersion.name)
+            return GetPackageAssemblyNames()
                 .Select(a => a.name);
         }
 
@@ -168,7 +157,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
             var filter = new Filter { testMode = testMode, assemblyNames = assemblyNames };
             var executionSettings = new ExecutionSettings { filter = filter, filters = new Filter[0] };
 
-            Api.RetrieveTestList(testMode, rootTest =>
+            api.RetrieveTestList(testMode, rootTest =>
             {
                 callback(rootTest, executionSettings);
             });
@@ -182,10 +171,10 @@ namespace Unity.PackageManagerUI.Develop.Editor
                     .Where(t => assemblyNames.Contains(t.Name.Replace(".dll", "")))
                     .Sum(t => t.TestCaseCount);
 
-                TestCaseCount += testCount;
-                
+                m_TestCaseCount += testCount;
+
                 if (testCount != 0)
-                    Api.Execute(executionSettings);
+                    api.Execute(executionSettings);
                 else
                     OnRunFinished(null);
             });
@@ -193,29 +182,25 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         void Run()
         {
-            if (TestMode.HasFlag(TestMode.EditMode))
+            if (m_TestMode.HasFlag(TestMode.EditMode))
                 RunMode(TestMode.EditMode);
-            else if (TestMode.HasFlag(TestMode.PlayMode))
+            else if (m_TestMode.HasFlag(TestMode.PlayMode))
                 RunMode(TestMode.PlayMode);
         }
-        
+
         void RunMode(TestMode testMode)
         {
-            Current = testMode;
-            TestMode &= ~testMode;
-            RunTest(testMode, GetAllPackageTestAssemblies(PackageVersion).ToArray());
+            m_Current = testMode;
+            m_TestMode &= ~testMode;
+            RunTest(testMode, GetAllPackageTestAssemblies().ToArray());
         }
 
-        public void Test(IPackageVersion packageVersion, TestMode testMode)
+        public void Test(string aPackageName, TestMode testMode)
         {
             Reset();
-
-            if (packageVersion is MockPackageVersion)
-                mockPackageVersion = packageVersion as MockPackageVersion;
-            else
-                upmPackageVersion = packageVersion as UpmPackageVersion;
+            m_PackageName = aPackageName;
             
-            TestMode = testMode;
+            m_TestMode = testMode;
             ShowTestRunnerWindow();
 
             Run();
@@ -223,17 +208,16 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         void Reset()
         {
-            TestCaseCount = 0;
-            TestMode = 0;
-            TestCasePassedCount = 0;
-            mockPackageVersion = null;
-            upmPackageVersion = null;
+            m_TestCaseCount = 0;
+            m_TestMode = 0;
+            m_TestCasePassedCount = 0;
+            m_PackageName = "";
         }
 
         public void ShowTestRunnerWindow()
         {
             var testRunnerWindow = EditorWindow.GetWindow<TestRunnerWindow>("Test Runner");
-            testRunnerWindow.Show();            
+            testRunnerWindow.Show();
         }
     }
 }

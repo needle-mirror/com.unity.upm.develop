@@ -1,55 +1,57 @@
 using System;
 using System.Linq;
-using UnityEditor;
 using UnityEditor.PackageManager.UI;
 using UnityEditor.PackageManager.ValidationSuite;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
-    class ValidationSuiteReport : VisualElement
+namespace Unity.PackageManagerUI.Develop.Editor
+{
+    internal class ValidationSuiteReport : VisualElement
     {
-        static string SelectedClass = "selected";
+        private const string k_SelectedClass = "selected";
 
-        public event Action<ValidationTestReport> OnSelected = delegate { };
-        
-        internal IPackageVersion PackageVersion;
-        
-        VisualElement Content { get; set; }
-        ScrollView TestList { get; set; }
-        ReportRow Selected { get; set; }
-        VisualElement DetailsContainer { get; set; }
-        TextField Details { get; set; }
-        Label Header { get; set; }
-        Label ValidationType { get; set; }
-        VisualElement Summary { get; set; }
-        public ValidationSuiteReportData Report { get; set; }
-        public bool Dragging { get; set; }
-        float DragStart { get; set; }
-        float DragStartHeight { get; set; }
+        public event Action<ValidationTestReport> onSelected = delegate {};
+
+        internal IPackageVersion packageVersion { get; set; }
+
+        private VisualElement m_Content;
+        private ScrollView m_TestList;
+        private ReportRow m_Selected;
+        private VisualElement m_DetailsContainer;
+        private TextField m_Details;
+        private Label m_Header;
+        private Label m_ValidationType;
+        private VisualElement m_Summary;
+
+        public ValidationSuiteReportData report { get; set; }
+
+        public bool isDragging { get; set; }
+        private float m_DragStart;
+        private float m_DragStartHeight;
 
         public ValidationSuiteReport()
         {
             ToolbarExtension.SetStyleSheets(this);
-            
+
             name = "validationReport";
             this.StretchToParentSize();
 
             style.justifyContent = Justify.SpaceBetween;
-            
+
             Add(CreateContent());
 
             RegisterCallback<AttachToPanelEvent>(e => OnEnterPanel());
             RegisterCallback<DetachFromPanelEvent>(e => OnLeavePanel());
 
-            OnEnterPanel();            
+            OnEnterPanel();
         }
-        
+
         void OnEnterPanel()
         {
             if (panel == null)
                 return;
-            Dragging = false;
+            isDragging = false;
             panel.visualTree.RegisterCallback<KeyDownEvent>(OnKeyDownEvent);
         }
 
@@ -58,10 +60,10 @@ namespace Unity.PackageManagerUI.Develop.Editor {
             if (panel == null)
                 return;
 
-            Dragging = false;
+            isDragging = false;
             panel.visualTree.UnregisterCallback<KeyDownEvent>(OnKeyDownEvent);
         }
-        
+
         void OnKeyDownEvent(KeyDownEvent evt)
         {
             switch (evt.keyCode)
@@ -78,50 +80,50 @@ namespace Unity.PackageManagerUI.Develop.Editor {
                     SelectBy(1);
                     evt.PreventDefault();
                     evt.StopImmediatePropagation();
-                    break;                    
+                    break;
                 }
             }
         }
 
         void SelectBy(int delta = 1)
         {
-            if (!Report.Tests.Any())
+            if (!report.Tests.Any())
                 return;
-            
-            var currentTestIndex = Report.Tests.FindIndex(test => test == Selected.Test);
-            var targetIndex = Math.Max(Math.Min(currentTestIndex + delta, Report.Tests.Count - 1), 0);
-            var targetTest = Report.Tests[targetIndex];
+
+            var currentTestIndex = report.Tests.FindIndex(test => test == m_Selected.test);
+            var targetIndex = Math.Max(Math.Min(currentTestIndex + delta, report.Tests.Count - 1), 0);
+            var targetTest = report.Tests[targetIndex];
 
             SelectRow(targetTest);
         }
 
         ReportRow GetForTest(ValidationTestReport targetTest)
         {
-            return TestList.Query<ReportRow>().ToList().Find(row => row.Test.TestName == targetTest.TestName);
+            return m_TestList.Query<ReportRow>().ToList().Find(row => row.test.TestName == targetTest.TestName);
         }
 
         public void Init(IPackageVersion packageVersion, ValidationSuiteReportData reportData)
         {
             if (packageVersion == null)
                 return;
-            if (packageVersion != PackageVersion)
-                OnSelected(null);
-            
-            PackageVersion = packageVersion;
+            if (packageVersion != this.packageVersion)
+                onSelected(null);
 
-            Header.text = $"{PackageVersion.displayName} Validation Report";
-            ValidationType.text = $"Validation Type: {reportData.Type}";
-                
-            Report = reportData;
-            TestList.Clear();
-            Details.value = "";
+            this.packageVersion = packageVersion;
 
-            if (Report != null)
+            m_Header.text = $"{this.packageVersion.displayName} Validation Report";
+            m_ValidationType.text = $"Validation Type: {reportData.Type}";
+
+            report = reportData;
+            m_TestList.Clear();
+            m_Details.value = "";
+
+            if (report != null)
             {
-                Header.tooltip = $"Test was run using the {reportData.Type} validation type.";
-                if (Report.Tests != null)
-                    foreach (var test in Report.Tests)
-                        TestList.Add(new ReportRow(test, SelectRow));                
+                m_Header.tooltip = $"Test was run using the {reportData.Type} validation type.";
+                if (report.Tests != null)
+                    foreach (var test in report.Tests)
+                        m_TestList.Add(new ReportRow(test, SelectRow));
             }
         }
 
@@ -129,72 +131,72 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         {
             SelectRow(GetForTest(targetTest));
         }
-        
+
         public void SelectRow(ReportRow row)
         {
-            if (Selected != null)
-                Selected.RemoveFromClassList(SelectedClass);
+            if (m_Selected != null)
+                m_Selected.RemoveFromClassList(k_SelectedClass);
 
-            Selected = row;
+            m_Selected = row;
 
-            if (Selected != null)
+            if (m_Selected != null)
             {
-                OnSelected(Selected.Test);
-                Selected.AddToClassList(SelectedClass);
-                Details.value = $"{Selected.Test.TestDescription}\n\n{string.Join("\n\n", Selected.Test.TestOutput.Select(x => x.Output).ToArray())}";
+                onSelected(m_Selected.test);
+                m_Selected.AddToClassList(k_SelectedClass);
+                m_Details.value = $"{m_Selected.test.TestDescription}\n\n{string.Join("\n\n", m_Selected.test.TestOutput.Select(x => x.Output).ToArray())}";
             }
             else
-                Details.value = "";
-            
-            UIUtils.ScrollIfNeeded(TestList, row);
+                m_Details.value = "";
+
+            UIUtils.ScrollIfNeeded(m_TestList, row);
         }
-        
+
         VisualElement CreateContent()
         {
-            Content = new VisualElement();
-            Content.name = "content";
+            m_Content = new VisualElement();
+            m_Content.name = "content";
 
-            Summary = new VisualElement();
-            Summary.name = "summary";
-            
-            Header = new Label();
-            Header.name = "header";
-            Summary.Add(Header);
+            m_Summary = new VisualElement();
+            m_Summary.name = "summary";
 
-            ValidationType = new Label();
-            ValidationType.name = "validationType";
-            ValidationType.text = "Validation Type: None";
-            Summary.Add(ValidationType);
+            m_Header = new Label();
+            m_Header.name = "header";
+            m_Summary.Add(m_Header);
 
-            Content.Add(Summary);
+            m_ValidationType = new Label();
+            m_ValidationType.name = "validationType";
+            m_ValidationType.text = "Validation Type: None";
+            m_Summary.Add(m_ValidationType);
 
-            TestList = new ScrollView();
-            TestList.name = "testList";
-            Content.Add(TestList);
+            m_Content.Add(m_Summary);
 
-            Content.Add(CreateDetails());
+            m_TestList = new ScrollView();
+            m_TestList.name = "testList";
+            m_Content.Add(m_TestList);
 
-            return Content;
+            m_Content.Add(CreateDetails());
+
+            return m_Content;
         }
 
         VisualElement CreateDetails()
         {
-            DetailsContainer = new VisualElement();
-            DetailsContainer.name = "detailsContainer";
+            m_DetailsContainer = new VisualElement();
+            m_DetailsContainer.name = "detailsContainer";
             var splitter = new VisualElement();
             splitter.name = "splitter";
             splitter.RegisterCallback<MouseDownEvent>(evt =>
             {
-                Dragging = true;
-                DragStart = splitter.LocalToWorld(evt.localMousePosition).y;
-                DragStartHeight = DetailsContainer.layout.height;
+                isDragging = true;
+                m_DragStart = splitter.LocalToWorld(evt.localMousePosition).y;
+                m_DragStartHeight = m_DetailsContainer.layout.height;
             });
-            RegisterCallback<MouseUpEvent>(evt => Dragging = false);
+            RegisterCallback<MouseUpEvent>(evt => isDragging = false);
             RegisterCallback<MouseMoveEvent>(OnDrag);
-            Details = new TextField();
-            Details.name = "details";
-            Details.multiline = true;
-            Details.RegisterCallback<KeyDownEvent>(evt =>
+            m_Details = new TextField();
+            m_Details.name = "details";
+            m_Details.multiline = true;
+            m_Details.RegisterCallback<KeyDownEvent>(evt =>
             {
                 // Don't allow modification of this textfield
                 evt.PreventDefault();
@@ -202,20 +204,20 @@ namespace Unity.PackageManagerUI.Develop.Editor {
             });
             var detailsContent = new ScrollView();
             detailsContent.name = "detailsContent";
-            detailsContent.Add(Details);
-            DetailsContainer.Add(splitter);
-            DetailsContainer.Add(detailsContent);
+            detailsContent.Add(m_Details);
+            m_DetailsContainer.Add(splitter);
+            m_DetailsContainer.Add(detailsContent);
 
-            return DetailsContainer;
+            return m_DetailsContainer;
         }
-        
+
         void OnDrag(MouseMoveEvent evt)
         {
-            if (!Dragging)
+            if (!isDragging)
                 return;
 
-            var delta = DragStart - this.LocalToWorld(evt.localMousePosition).y;
-            DetailsContainer.style.minHeight = Math.Max(100, DragStartHeight + delta);
+            var delta = m_DragStart - this.LocalToWorld(evt.localMousePosition).y;
+            m_DetailsContainer.style.minHeight = Math.Max(100, m_DragStartHeight + delta);
         }
     }
 }

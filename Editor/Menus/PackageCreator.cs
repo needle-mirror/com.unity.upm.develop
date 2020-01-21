@@ -8,13 +8,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Connect;
-using UnityEngine;
 using UnityEditor.PackageManager;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
-    internal static class PackageCreator    
+    internal static class PackageCreator
     {
         private static readonly string k_DefaultOrganizationName = "Undefined";
         private static readonly string k_DefaultName = "Undefined Package";
@@ -52,7 +51,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 displayName = packageDisplayName,
                 name = packageName,
                 rootNamespace = rootNamespace,
-                templateFolder = $"{ToolbarExtension.TemplatesPath}/standard"
+                templateFolder = $"{ToolbarExtension.k_TemplatesPath}/standard"
             };
         }
 

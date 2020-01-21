@@ -19,27 +19,16 @@ namespace Unity.PackageCreatorTests1
     }
 }
 
-/* This Test still needs to be ported
-        [TestCase(false)]
-        [TestCase(true)]
-        public void Show_Or_Hide_Develop_Button_By_CanBeEmbedded(bool canBeEmbedded)
-        {
-            m_MockPackage.Setup(p => p.installedVersion).Returns(m_MockVersion.Object);
-            m_MockVersion.Setup(v => v.isInstalled).Returns(true);
-            m_MockVersion.Setup(v => v.canBeEmbedded).Returns(canBeEmbedded);
-            m_PackageDetails.SetPackage(m_MockPackage.Object, m_MockVersion.Object);
-
-            Assert.AreEqual(m_PackageDetails.developButton.visible, canBeEmbedded);
-        }
- */
 namespace Unity.PackageManagerUI.Develop.Editor.Tests
 {
     public class PackageCreatorTests
     {
-        static readonly string k_ValidSpecialChars = "'~!@#$%^&;+=(){}[]";
-        static int s_NameLoopReplacement = 5;
-        List<string> m_FoldersToDelete;
-        string defaultPackage;            // Package expected to always exists. Used for naming tests.
+        private static readonly string k_InvalidFilenameChars = "/?<>\\:*|\"";
+        private static readonly string k_ValidSpecialChars = "'~!@#$%^&;+=(){}[]";
+        private static int s_NameLoopReplacement = 5;
+        
+        private List<string> m_FoldersToDelete;
+        private string m_DefaultPackage;            // Package expected to always exists. Used for naming tests.
 
         [UnitySetUp]
         public IEnumerator EnsureNoCompilationLeakedByPreviousTest()
@@ -58,13 +47,9 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            // Make sure we are not logged in
-            if (MockUnityConnect.loggedIn)
-                MockUnityConnect.Logout();
-            
             try
             {
-                defaultPackage = CreateTestPackage();
+                m_DefaultPackage = CreateTestPackage();
                 AssetDatabase.Refresh();
             }
             catch (Exception e)
@@ -82,9 +67,9 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            if (!string.IsNullOrEmpty(defaultPackage))
+            if (!string.IsNullOrEmpty(m_DefaultPackage))
             {
-                DeleteFolder(defaultPackage);
+                DeleteFolder(m_DefaultPackage);
                 AssetDatabase.Refresh();
             }
         }
@@ -94,9 +79,7 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests
         {
             if (m_FoldersToDelete.Count == 0)
                 return;
-
-            MockAssetDatabase.CloseCachedFiles();
-
+            
             foreach (var folder in m_FoldersToDelete)
             {
                 DeleteFolder(folder);
@@ -134,7 +117,7 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests
             yield return new TestCaseData("New Package", "New\rOrganization", "New Package", "com.neworganization.newpackage", "NewOrganization.NewPackage");
 
             // Test invalid special characters
-            foreach (var specialChar in MockEditorUtility.GetInvalidFilenameChars())
+            foreach (var specialChar in k_InvalidFilenameChars.ToCharArray())
             {
                 yield return new TestCaseData($"New{specialChar}Package", "New Organization", "New_Package", "com.neworganization.new_package", "NewOrganization.NewPackage");
             }
@@ -216,7 +199,8 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests
             yield return new TestCaseData("0.0001", "0.0001", "0.0001", "com.undefined.undefinedpackage", "Undefined.UndefinedPackage");
 
             // Test package exists: package "Package Creator Tests" already exists, should use "Package Creator Tests 1", "com.unity.packagecreatortests1" and "Unity.PackageCreatorTests2"
-            yield return new TestCaseData("Package Creator Tests", "Unity", "Package Creator Tests 1", "com.unity.packagecreatortests1", "Unity.PackageCreatorTests2");
+            // Ignore("Instability with created package tear down process, will be looked into in PAX-950")]
+            //yield return new TestCaseData("Package Creator Tests", "Unity", "Package Creator Tests 1", "com.unity.packagecreatortests1", "Unity.PackageCreatorTests2");
 
             // Test name more than kMaxPackageNameLength characters
             var longName = new string('x', PackageCreator.k_MaxPackageNameLength);
@@ -237,6 +221,7 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests
             Assert.AreEqual(expectedRootNamespace, options.rootNamespace);
         }
 
+        [Ignore("Instability with created package tear down process, will be looked into in PAX-950")]
         [Test]
         public void TestCreateTemplateOptions_WithExistingDisplayNameAndNamespace()
         {

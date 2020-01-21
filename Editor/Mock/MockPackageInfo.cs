@@ -1,19 +1,18 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Connect;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
-#if UNITY_2020_1_OR_NEWER
 using UnityEditor.Scripting.ScriptCompilation;
-#endif
 
-namespace Unity.PackageManagerUI.Develop.Editor {
+namespace Unity.PackageManagerUI.Develop.Editor
+{
     /// <summary>
     /// Since only this assembly has internal access, this gives a way for tests to create the IPackageVersion interface
     /// </summary>
-    class MockPackageVersion :  IPackageVersion
+    internal class MockPackageVersion : IPackageVersion
     {
         public MockPackageVersion(string name)
         {
@@ -26,11 +25,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
             packageUniqueId = "123";
             dependencies = new DependencyInfo[0];
             resolvedDependencies = new DependencyInfo[0];
-#if UNITY_2020_1_OR_NEWER
             errors = new List<UIError>();
-#else
-            errors = new List<Error>();
-#endif
             samples = new List<Sample>();
             datePublished = DateTime.Now;
             isInstalled = true;
@@ -53,25 +48,15 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         public string displayName { get; }
         public string type { get; }
         public string author { get; }
-#if UNITY_2020_1_OR_NEWER
         public string releaseNotes { get; }
-#endif
         public string description { get; }
         public string category { get; }
         public string packageUniqueId { get; }
-        public string uniqueId => this.versionId();
+        public string uniqueId => this.VersionId();
         public PackageSource source { get; }
-#if UNITY_2020_1_OR_NEWER
         public IEnumerable<UIError> errors { get; }
-#else
-        public IEnumerable<Error> errors { get; }
-#endif
         public IEnumerable<Sample> samples { get; }
-#if UNITY_2020_1_OR_NEWER
         public SemVersion? version { get; }
-#else
-        public SemVersion version { get; }
-#endif
         public DateTime? datePublished { get; }
         public DependencyInfo[] dependencies { get; }
         public DependencyInfo[] resolvedDependencies { get; }
@@ -82,6 +67,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         {
             return tag == PackageTag.InDevelopment;
         }
+
         public bool isInstalled { get; }
         public bool isFullyFetched { get; }
         public bool isUserVisible { get; }
@@ -91,11 +77,8 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         public bool canBeEmbedded { get; }
         public bool isDirectDependency { get; }
 
-#if UNITY_2020_1_OR_NEWER
         public SemVersion? supportedVersion { get; }
-#else
-        public SemVersion supportedVersion { get; }
-#endif
+
         public IEnumerable<SemVersion> supportedVersions { get; }
 
         public IEnumerable<PackageImage> images { get; }
@@ -109,7 +92,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         public IDictionary<string, string> categoryLinks { get; }
     }
 
-    class MockPackageInfo
+    internal class MockPackageInfo
     {
         public static PackageInfo[] GetAll()
         {
@@ -117,9 +100,9 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         }
     }
 
-    class MockUnityConnect
+    internal class MockUnityConnect
     {
-        public static bool loggedIn{ get => UnityConnect.instance.loggedIn; }
+        public static bool loggedIn { get => UnityConnect.instance.loggedIn; }
 
         public static void Logout()
         {
@@ -127,7 +110,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         }
     }
 
-    class MockAssetDatabase
+    internal class MockAssetDatabase
     {
         public static void CloseCachedFiles()
         {
@@ -135,7 +118,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         }
     }
 
-    class MockEditorUtility
+    internal class MockEditorUtility
     {
         public static string GetInvalidFilenameChars()
         {

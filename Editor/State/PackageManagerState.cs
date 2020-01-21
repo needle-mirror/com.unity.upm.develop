@@ -3,43 +3,40 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using UnityEditor.PackageManager.UI;
 
-namespace Unity.PackageManagerUI.Develop.Editor 
+namespace Unity.PackageManagerUI.Develop.Editor
 {
-    class PackageManagerState : ScriptableObject
+    internal class PackageManagerState : ScriptableObject
     {
-        static string SavedStateAssetPath => Path.Combine("Library", "PackageManagerUI.asset");
-
-        internal static PackageManagerState PackageManagerStateInstance = null;
+        private static readonly string k_SavedStateAssetPath = Path.Combine("Library", "PackageManagerUI.asset");
 
         [SerializeField]
-        List<DevelopmentState> developmentStates = new List<DevelopmentState>();
+        private List<DevelopmentState> m_DevelopmentStates = new List<DevelopmentState>();
 
-        internal static PackageManagerState Instance
+        private static PackageManagerState s_PackageManagerStateInstance;
+        internal static PackageManagerState instance
         {
             get
             {
-                if (PackageManagerStateInstance == null)
-                    PackageManagerStateInstance = CreateInstance<PackageManagerState>();
-                return PackageManagerStateInstance;
+                if (s_PackageManagerStateInstance == null)
+                    s_PackageManagerStateInstance = CreateInstance<PackageManagerState>();
+                return s_PackageManagerStateInstance;
             }
-        }
-
-        public DevelopmentState ForPackage(IPackageVersion packageVersion)
-        {
-            return ForPackage(packageVersion.name);
+            set
+            {
+                s_PackageManagerStateInstance = value;
+            }
         }
 
         public DevelopmentState ForPackage(string packageName)
         {
-            var result = developmentStates.FirstOrDefault(state => state.PackageName == packageName);
+            var result = m_DevelopmentStates.FirstOrDefault(state => state.packageName == packageName);
             if (result != null)
                 return result;
 
             result = new DevelopmentState(packageName);
-            result.OnDevelopmentStateUpdate += SaveOnDevelopmentStateUpdate;
-            developmentStates.Add(result);
+            result.onDevelopmentStateUpdate += SaveOnDevelopmentStateUpdate;
+            m_DevelopmentStates.Add(result);
 
             // Save the changes to file
             SaveStateToAsset();
@@ -48,33 +45,30 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         public void ResetDevelopmentState(string packageName)
         {
-            developmentStates.FirstOrDefault(state => state.PackageName == packageName)?.Reset();
+            m_DevelopmentStates.FirstOrDefault(state => state.packageName == packageName)?.Reset();
         }
 
-        void SaveOnDevelopmentStateUpdate(DevelopmentState developmentState)
-        {
-            SaveStateToAsset();
-        }
+        private void SaveOnDevelopmentStateUpdate(DevelopmentState developmentState) => SaveStateToAsset();
 
         public void OnEnable()
         {
-            if (PackageManagerStateInstance == null)
-                PackageManagerStateInstance = this;
+            if (s_PackageManagerStateInstance == null)
+                s_PackageManagerStateInstance = this;
             RestoreStateFromAsset();
         }
 
         public void SaveStateToAsset(string assetPath = null)
         {
-            using (var sw = new StreamWriter(assetPath ?? SavedStateAssetPath))
+            using (var sw = new StreamWriter(assetPath ?? k_SavedStateAssetPath))
             {
                 var stateToSave = JsonUtility.ToJson(this, true);
                 sw.Write(stateToSave);
             }
         }
 
-        void RestoreStateFromAsset(string assetPath = null)
+        private void RestoreStateFromAsset(string assetPath = null)
         {
-            assetPath = assetPath ?? SavedStateAssetPath;
+            assetPath = assetPath ?? k_SavedStateAssetPath;
             if (File.Exists(assetPath))
             {
                 try
@@ -85,9 +79,9 @@ namespace Unity.PackageManagerUI.Develop.Editor
                         JsonUtility.FromJsonOverwrite(savedState, this);
                     }
 
-                    developmentStates.ForEach(state =>
+                    m_DevelopmentStates.ForEach(state =>
                     {
-                        state.OnDevelopmentStateUpdate += SaveOnDevelopmentStateUpdate;
+                        state.onDevelopmentStateUpdate += SaveOnDevelopmentStateUpdate;
 
                         // Make sure the loaded development state has all the lists initialized properly
                         state.InitLists();
@@ -95,16 +89,16 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 }
                 catch (IOException)
                 {
-                    developmentStates = new List<DevelopmentState>();
+                    m_DevelopmentStates = new List<DevelopmentState>();
                 }
                 catch (ArgumentException)
                 {
-                    developmentStates = new List<DevelopmentState>(); ;
+                    m_DevelopmentStates = new List<DevelopmentState>();;
                 }
             }
             else
             {
-                developmentStates = new List<DevelopmentState>();
+                m_DevelopmentStates = new List<DevelopmentState>();
             }
         }
     }

@@ -3,25 +3,26 @@ using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.PackageManager.UI;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
-    class UpmPackOperation
+namespace Unity.PackageManagerUI.Develop.Editor
+{
+    internal class UpmPackOperation
     {
-        string Source { get; set; }
-        string Destination { get; set; }
+        private string m_Source { get; set; }
+        private string m_Destination { get; set; }
 
-        Action<string> onOperationSuccess;
-        Action<Error> onOperationError;
+        private Action<string> onOperationSuccess;
+        private Action<Error> onOperationError;
 
-        PackRequest m_Request;
-        
+        private PackRequest m_Request;
+
         public UpmPackOperation(IPackageVersion packageVersion, string destination, Action<string> doneCallbackAction, Action<Error> errorCallbackAction = null)
         {
             onOperationError += errorCallbackAction;
             onOperationSuccess += doneCallbackAction;
-            Source = packageVersion.packageInfo.resolvedPath;
-            Destination = destination;
+            m_Source = packageVersion.packageInfo.resolvedPath;
+            m_Destination = destination;
 
-            m_Request = Client.Pack(Source, destination);
+            m_Request = Client.Pack(m_Source, destination);
             UnityEditor.EditorApplication.update += OnProgress;
         }
 
@@ -31,13 +32,12 @@ namespace Unity.PackageManagerUI.Develop.Editor {
             {
                 UnityEditor.EditorApplication.update -= OnProgress;
                 if (m_Request.Status == StatusCode.Success)
-                    onOperationSuccess.Invoke(Destination);
+                    onOperationSuccess.Invoke(m_Destination);
                 else if (m_Request.Status >= StatusCode.Failure)
                     onOperationError.Invoke(m_Request.Error);
                 else
                     onOperationError.Invoke(new Error(NativeErrorCode.Unknown, "Unsupported progress state " + m_Request.Status));
             }
         }
-
     }
 }

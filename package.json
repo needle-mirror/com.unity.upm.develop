@@ -1,18 +1,19 @@
 {
   "name": "com.unity.upm.develop",
   "displayName": "Package Development",
-  "version": "0.1.2-preview",
-  "unity": "2019.3",
+  "version": "0.2.0-preview",
+  "unity": "2020.1",
   "description": "Installs the UPM package development extension. Author new UPM packages and manage them with the new In-Development mode in the Package Manager UI. Publish your packages to a local file, scoped registry or Asset Store",
   "dependencies": {
     "com.unity.test-framework": "1.1.9",
-    "nuget.mono-cecil": "0.1.6-preview",
     "com.unity.package-validation-suite": "0.7.10-preview"
   },
+  "upmCi": {
+    "footprint": "9a6bb134fb611cc4d23b366b2f277dabec31c105"
+  },
   "repository": {
-    "footprint": "4889589020fcc0daf1a998f25667508db231038d",
-    "type": "git",
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.upm.develop.git",
-    "revision": "35003bb5cf9da470e6836d2da6dfb8c57a5a03d5"
+    "type": "git",
+    "revision": "954fef3db21e0fabb44564c0aded9aef32dc9d1a"
   }
 }

@@ -1,48 +1,46 @@
-using System;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Unity.PackageManagerUI.Develop.Editor.Tests {
-    class TestCommon
+namespace Unity.PackageManagerUI.Develop.Editor.Tests
+{
+    internal class TestCommon
     {
-        internal ToolbarExtension Extension;
-        internal MockTestRunnerApi Mock;
-        internal MockPackageVersion mockPackageVersion;
-        internal PackageTestRunner PackageTestRunner;
-        internal PackageManagerState PackageManagerState;
+        protected ToolbarExtension m_Extension;
+        protected MockTestRunnerApi m_Mock;
+        protected PackageTestRunner m_PackageTestRunner;
+        protected PackageManagerState m_PackageManagerState;
+        protected string m_MockPackageName;
+        
+        private PackageManagerState m_OriginalStateInstance;
 
-        PackageManagerState OriginalStateInstance;
-		
         // We need to make sure we always create the toolbar with a separate PackageTestRunner and not use the global live singleton
-        internal PrepareTools CreateToolbar(MockPackageVersion aMockPackageVersion = null)
+        internal PrepareTools CreateToolbar()
         {
-            if (aMockPackageVersion!=null)
-                return new PrepareTools(aMockPackageVersion, PackageTestRunner);
-            else return new PrepareTools(mockPackageVersion, PackageTestRunner);
+            return new PrepareTools(null, m_PackageTestRunner);
         }
 
         [SetUp]
         public void Setup()
         {
-            OriginalStateInstance = PackageManagerState.PackageManagerStateInstance;
-            PackageManagerState = ScriptableObject.CreateInstance<PackageManagerState>();
-            PackageManagerState.PackageManagerStateInstance = PackageManagerState;
-                
-            Mock = new MockTestRunnerApi();
-            PackageTestRunner = new PackageTestRunner();
-            PackageTestRunner.TestCompleteMessage = "Mock test completed.";
-            PackageTestRunner._Api = Mock;
-            Mock.packageTestRunner = PackageTestRunner;
-            Extension = new ToolbarExtension();
-            Extension.PackageTestRunner = PackageTestRunner;
-            mockPackageVersion = new MockPackageVersion("com.unity.upm.develop");
+            m_OriginalStateInstance = PackageManagerState.instance;
+            m_PackageManagerState = ScriptableObject.CreateInstance<PackageManagerState>();
+            PackageManagerState.instance = m_PackageManagerState;
+
+            m_Mock = new MockTestRunnerApi();
+            m_PackageTestRunner = new PackageTestRunner();
+            PackageTestRunner.s_TestCompleteMessage = "Mock test completed.";
+            m_PackageTestRunner.api = m_Mock;
+            m_Mock.packageTestRunner = m_PackageTestRunner;
+            m_Extension = new ToolbarExtension();
+            m_Extension.packageTestRunner = m_PackageTestRunner;
+            m_MockPackageName = "test";
         }
 
         [TearDown]
         public void TearDown()
         {
-            PackageManagerState.PackageManagerStateInstance = OriginalStateInstance;
-            OriginalStateInstance = null;
+            PackageManagerState.instance = m_OriginalStateInstance;
+            m_OriginalStateInstance = null;
         }
     }
 }

@@ -1,57 +1,58 @@
-using System;
 using UnityEditor;
 using UnityEditor.PackageManager.UI;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
-    class PublishTools : VisualElement
+namespace Unity.PackageManagerUI.Develop.Editor
+{
+    internal class PublishTools : VisualElement
     {
-        DropdownButton PublishButton = new DropdownButton();
+        private readonly DropdownButton m_PublishButton = new DropdownButton();
 
-        internal IPackageVersion PackageVersion { get; set; }
+        internal IPackage package { get; set; }
+        internal IPackageVersion packageVersion { get; set; }
 
         public PublishTools()
         {
             ToolbarExtension.SetStyleSheets(this);
             SetupPublishButton();
         }
-        
-        void SetupPublishButton()
+
+        private void SetupPublishButton()
         {
-            PublishButton.clickable.clicked += () => PublishButton.OnDropdownButtonClicked();
-            PublishButton.name = "publish";
-            PublishButton.text = "Publish";
+            m_PublishButton.clickable.clicked += () => m_PublishButton.OnDropdownButtonClicked();
+            m_PublishButton.name = "publish";
+            m_PublishButton.text = "Publish";
             SetupPublishTargetButton();
-            Add(PublishButton);		 
+            Add(m_PublishButton);
         }
 
-        void SetupPublishTargetButton()
+        private void SetupPublishTargetButton()
         {
             var menu = new GenericMenu();
 
-            foreach (var extension in PackageManagerDevelopExtensions.PublishExtensions)
+            foreach (var extension in PackageManagerDevelopExtensions.publishExtensions)
             {
-                var label = new GUIContent($"{extension.Name}");
+                var label = new GUIContent($"{extension.name}");
                 menu.AddItem(label, false, () => OnPublishClicked(extension));
             }
 
-            PublishButton.DropdownMenu = menu;
+            m_PublishButton.DropdownMenu = menu;
         }
 
-        void OnPublishClicked(IPublishExtension extension)
+        private void OnPublishClicked(IPublishExtension extension)
         {
-            extension?.OnPublish(PackageVersion);
+            extension?.OnPublish(packageVersion);
         }
 
-        public void SetPackage(IPackageVersion packageVersion)
+        public void SetPackage(IPackage package)
         {
-            PackageVersion = packageVersion;
-            var isInDevelopment = PackageVersion != null && PackageVersion.HasTag(PackageTag.InDevelopment);
-            var shouldShow = isInDevelopment || (MenuExtensions.AlwaysShowDevTools && PackageVersion != null && PackageVersion.isInstalled);
+            this.package = package;
+            packageVersion = package?.versions?.primary;
+            var isInDevelopment = packageVersion != null && packageVersion.HasTag(PackageTag.InDevelopment);
+            var shouldShow = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion != null && packageVersion.isInstalled);
 
-            UIUtils.SetElementDisplay(PublishButton, shouldShow);
+            UIUtils.SetElementDisplay(m_PublishButton, shouldShow);
         }
     }
 }

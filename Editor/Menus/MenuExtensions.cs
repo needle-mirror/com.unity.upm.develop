@@ -1,23 +1,33 @@
 using System;
-using System.IO;
+using System.Linq;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
-using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Unity.PackageManagerUI.Develop.Editor {
-    class MenuExtensions : IPackageManagerMenuExtensions
+namespace Unity.PackageManagerUI.Develop.Editor
+{
+#if UNITY_2020_2_OR_NEWER
+    [Serializable]
+    internal class PackageObject : ScriptableSingleton<PackageObject>
     {
-        public static event Action<bool> OnShowDevToolsSet = delegate { };
+        public string packageName;
+    }
+#endif
+    internal class MenuExtensions : IPackageManagerMenuExtensions
+    {
+        public static event Action<bool> onShowDevToolsSet = delegate {};
 
-        const string kAlwaysShowDevTools = "PackageManager.AlwaysShowDevTools";
-        
-        public static bool AlwaysShowDevTools
+        private const string k_PackagesFolder = "Packages/";
+        private const string k_AlwaysShowDevTools = "PackageManager.AlwaysShowDevTools";
+
+        public static bool alwaysShowDevTools
         {
-            get { return EditorPrefs.GetBool(kAlwaysShowDevTools, false); }
-            set { 
-                EditorPrefs.SetBool(kAlwaysShowDevTools, value);
-                OnShowDevToolsSet(value);
+            get { return EditorPrefs.GetBool(k_AlwaysShowDevTools, false); }
+            set
+            {
+                EditorPrefs.SetBool(k_AlwaysShowDevTools, value);
+                onShowDevToolsSet(value);
             }
         }
 
@@ -25,13 +35,13 @@ namespace Unity.PackageManagerUI.Develop.Editor {
         {
             if (!Unsupported.IsDeveloperMode())
                 return;
-            
+
             menu.AppendSeparator();
             menu.AppendAction("Internal/Always show development tools", a =>
             {
                 OnDevelopmentToolToggle();
             }, a => !Unsupported.IsDeveloperMode() ? DropdownMenuAction.Status.Hidden :
-                AlwaysShowDevTools ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
+                alwaysShowDevTools? DropdownMenuAction.Status.Checked: DropdownMenuAction.Status.Normal);
         }
 
         public void OnAddMenuCreate(DropdownMenu menu)
@@ -45,21 +55,15 @@ namespace Unity.PackageManagerUI.Develop.Editor {
                 createPackage.actionClicked += displayName =>
                 {
                     createPackage.Hide();
-                    var packagePath = PackageCreator.CreatePackage("Packages/" + displayName);
                     PackageManagerWindowAnalytics.SendEvent("createPackage");
-                    AssetDatabase.Refresh();
-#if UNITY_2020_1_OR_NEWER
-                    EditorApplication.delayCall += () => Window.Open(displayName);
+#if UNITY_2020_2_OR_NEWER
+                    var packageName = PackageCreator.CreatePackage(k_PackagesFolder + displayName).Replace(k_PackagesFolder, "");
+                    PackageObject.instance.packageName = packageName;
+                    Client.Resolve();
 #else
-                    EditorApplication.delayCall += () =>
-                    {
-                        var path = Path.Combine(packagePath, "package.json");
-                        var o = AssetDatabase.LoadMainAssetAtPath(path);
-                        if (o != null)
-                            Selection.activeObject = o;
-
-                        PackageManagerWindow.SelectPackageAndFilter(displayName, PackageFilterTab.InDevelopment, true);
-                    };
+                    PackageCreator.CreatePackage(k_PackagesFolder + displayName);
+                    AssetDatabase.Refresh();
+                    EditorApplication.delayCall += () => Window.Open(displayName);
 #endif
                 };
 
@@ -70,11 +74,29 @@ namespace Unity.PackageManagerUI.Develop.Editor {
                 createPackage.Show();
             }, a => DropdownMenuAction.Status.Normal);
         }
-        public void OnFilterMenuCreate(DropdownMenu menu) { }
 
-        void OnDevelopmentToolToggle()
+        public void OnFilterMenuCreate(DropdownMenu menu) {}
+
+        private static void OnDevelopmentToolToggle()
         {
-            AlwaysShowDevTools = !AlwaysShowDevTools;
+            alwaysShowDevTools = !alwaysShowDevTools;
         }
+
+#if UNITY_2020_2_OR_NEWER
+        [InitializeOnLoadMethod]
+        static void SubscribeToEvent()
+        {
+            Events.registeredPackages += RegisteredPackagesEventHandler;
+        }
+
+        static void RegisteredPackagesEventHandler(PackageRegistrationEventArgs packageRegistrationEventArgs)
+        {
+            if (!string.IsNullOrEmpty(PackageObject.instance.packageName) && packageRegistrationEventArgs.added.Any(package => package.name == PackageObject.instance.packageName))
+            {
+                Window.Open(PackageObject.instance.packageName);
+                PackageObject.instance.packageName = string.Empty;
+            }
+        }
+#endif
     }
 }
