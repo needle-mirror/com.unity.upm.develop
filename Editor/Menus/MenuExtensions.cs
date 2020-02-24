@@ -49,7 +49,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
                     PackageManagerWindowAnalytics.SendEvent("createPackage");
                     AssetDatabase.Refresh();
 #if UNITY_2020_1_OR_NEWER
-                    EditorApplication.delayCall += () => PackageManagerWindow.SelectPackageAndFilter(displayName);
+                    EditorApplication.delayCall += () => Window.Open(displayName);
 #else
                     EditorApplication.delayCall += () =>
                     {

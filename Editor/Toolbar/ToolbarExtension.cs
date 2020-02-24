@@ -38,7 +38,7 @@ namespace Unity.PackageManagerUI.Develop.Editor {
             var visibleFlag = PackageVersion?.HasTag(PackageTag.Embeddable) ?? false;
             if (visibleFlag)
             {
-                var enableButton = !ApplicationUtil.instance.isCompiling && !PackageDatabase.instance.isInstallOrUninstallInProgress;
+                var enableButton = !EditorApplication.isCompiling && !PackageDatabase.instance.isInstallOrUninstallInProgress;
                 DevelopButton.SetEnabled(enableButton);
             }
             UIUtils.SetElementDisplay(DevelopButton, visibleFlag);

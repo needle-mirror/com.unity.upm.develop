@@ -17,7 +17,7 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests {
 
         public PackageTestRunner packageTestRunner;
 
-        public void Execute(ExecutionSettings executionSettings)
+        public string Execute(ExecutionSettings executionSettings)
         {
             RetrieveTestList(executionSettings.filter.testMode, testList =>
             {
@@ -35,7 +35,7 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests {
 
                 Callback.RunFinished(result);
             });
-            
+            return Guid.NewGuid().ToString();
         }
 
         public void RegisterCallbacks<T>(T testCallbacks, int priority = 0) where T : ICallbacks
