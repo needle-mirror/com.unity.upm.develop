@@ -16,7 +16,7 @@ namespace Unity.PackageManagerUI.Develop.Editor.Tests
         // We need to make sure we always create the toolbar with a separate PackageTestRunner and not use the global live singleton
         internal PrepareTools CreateToolbar()
         {
-            return new PrepareTools(null, m_PackageTestRunner);
+            return new PrepareTools(null,null, m_PackageTestRunner);
         }
 
         [SetUp]

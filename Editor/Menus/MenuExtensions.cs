@@ -55,7 +55,6 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 createPackage.actionClicked += displayName =>
                 {
                     createPackage.Hide();
-                    PackageManagerWindowAnalytics.SendEvent("createPackage");
 #if UNITY_2020_2_OR_NEWER
                     var packageName = PackageCreator.CreatePackage(k_PackagesFolder + displayName).Replace(k_PackagesFolder, "");
                     PackageObject.instance.packageName = packageName;
@@ -68,7 +67,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 };
 
                 var parent = EditorWindow.GetWindow<PackageManagerWindow>()
-                    .rootVisualElement.Q<PackageManagerToolbar>("topMenuToolbar")
+                    .rootVisualElement.Q<VisualElement>("topMenuToolbar")
                     .parent;
                 parent.Add(createPackage);
                 createPackage.Show();

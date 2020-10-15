@@ -195,10 +195,10 @@ namespace Unity.PackageManagerUI.Develop.Editor
             RunTest(testMode, GetAllPackageTestAssemblies().ToArray());
         }
 
-        public void Test(string aPackageName, TestMode testMode)
+        public void Test(string packageName, TestMode testMode)
         {
             Reset();
-            m_PackageName = aPackageName;
+            m_PackageName = packageName;
             
             m_TestMode = testMode;
             ShowTestRunnerWindow();
@@ -211,7 +211,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
             m_TestCaseCount = 0;
             m_TestMode = 0;
             m_TestCasePassedCount = 0;
-            m_PackageName = "";
+            m_PackageName = null;
         }
 
         public void ShowTestRunnerWindow()

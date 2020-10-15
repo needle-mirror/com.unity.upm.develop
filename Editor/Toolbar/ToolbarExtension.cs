@@ -60,7 +60,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         public void OnPackageSelectionChange(IPackageVersion packageVersion, VisualElement toolbar)
         {
-            var package = PackageDatabase.instance.GetPackage(packageVersion);
+            var package = PackageDatabase.instance.GetPackage(packageVersion?.packageUniqueId);
 
             if (packageVersion == null || toolbar == null || package == null)
                 return;
@@ -69,7 +69,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
             if (prepareTools == null)
             {
-                prepareTools = new PrepareTools(package, packageTestRunner);
+                prepareTools = new PrepareTools(package, packageVersion, packageTestRunner);
                 prepareTools.onValidate += OnValidate;
             }
             if (publishTools == null)  publishTools = new PublishTools();
@@ -84,9 +84,9 @@ namespace Unity.PackageManagerUI.Develop.Editor
             AddIfNotExists(toolbar.Q<VisualElement>(k_LeftItemsName), pevelopTools);
             AddIfNotExists(rightItems, publishTools, publishPosition);
 
-            pevelopTools.SetPackage(package);
-            prepareTools.SetPackage(package);
-            publishTools.SetPackage(package);
+            pevelopTools.SetPackage(package, packageVersion);
+            prepareTools.SetPackage(package, packageVersion);
+            publishTools.SetPackage(package, packageVersion);
 
             var publishTarget = PackageManagerState.instance.ForPackage(package.name)?.publishTarget;
             var extension = PackageManagerDevelopExtensions.GetPublishExtension(publishTarget);

@@ -6,7 +6,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
     {
         public static string VersionId(this IPackageVersion packageVersion)
         {
-            return $"{packageVersion.name}@{packageVersion.version}";
+            return $"{packageVersion.name}@{packageVersion.versionString}";
         }
     }
 }

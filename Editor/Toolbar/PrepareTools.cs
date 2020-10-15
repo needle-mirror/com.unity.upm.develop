@@ -32,14 +32,14 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         internal IPackageVersion packageVersion { get; set; }
 
-        public PrepareTools(IPackage package, PackageTestRunner packageTestRunner = null)
+        public PrepareTools(IPackage package, IPackageVersion packageVersion, PackageTestRunner packageTestRunner = null)
         {
             ToolbarExtension.SetStyleSheets(this);
 
             m_PackageTestRunner = packageTestRunner ?? PackageTestRunnerSingleton.instance.packageTestRunner;
 
             this.package = package;
-            packageVersion = this.package?.versions?.primary;
+            this.packageVersion = packageVersion;
 
             RefreshDevelopmentButtons();
 
@@ -58,10 +58,10 @@ namespace Unity.PackageManagerUI.Develop.Editor
             RefreshActionsDisplay();
         }
 
-        public void SetPackage(IPackage package)
+        public void SetPackage(IPackage package, IPackageVersion packageVersion)
         {
             this.package = package;
-            packageVersion = this.package?.versions?.primary;
+            this.packageVersion = packageVersion;
             RefreshDevelopmentButtons();
             RefreshValidationStatus();
             RefreshTryoutStatus();
@@ -120,7 +120,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
             if (packageVersion == null)
                 return;
 
-            var isInDevelopment = packageVersion?.HasTag(PackageTag.InDevelopment) ?? false;
+            var isInDevelopment = packageVersion.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
             RefreshActionsDisplay();
 
             if (developmentState == null && isInDevelopment)
@@ -139,7 +139,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
         {
             if (packageVersion == null)
                 return;
-            var isInDevelopment = packageVersion?.HasTag(PackageTag.InDevelopment) ?? false;
+            var isInDevelopment = packageVersion.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
             var shouldShow = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion.isInstalled);
             UIUtils.SetElementDisplay(m_TestRunnerButton, shouldShow);
             UIUtils.SetElementDisplay(m_ValidateButton, shouldShow);
@@ -149,12 +149,12 @@ namespace Unity.PackageManagerUI.Develop.Editor
         private void RefreshActionsStatus(DevelopmentState developmentState)
         {
             if (developmentState?.test != DropdownStatus.None)
-                m_TestRunnerButton.DropdownMenu = CreateStandardDropdown(state => m_PackageTestRunner.ShowTestRunnerWindow());
+                m_TestRunnerButton.dropdownMenu = CreateStandardDropdown(state => m_PackageTestRunner.ShowTestRunnerWindow());
             else
-                m_TestRunnerButton.DropdownMenu = null;
+                m_TestRunnerButton.dropdownMenu = null;
 
             if (developmentState != null)
-                m_TestRunnerButton.Status = developmentState.test;
+                m_TestRunnerButton.status = developmentState.test;
 
             RefreshValidationStatus();
             RefreshTryoutStatus();
@@ -167,18 +167,18 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
             if (!ValidationSuite.JsonReportExists(packageVersion.VersionId()))
             {
-                m_ValidateButton.Status = DropdownStatus.None;
-                m_ValidateButton.DropdownMenu = null;
+                m_ValidateButton.status = DropdownStatus.None;
+                m_ValidateButton.dropdownMenu = null;
             }
             else
             {
                 var report = ValidationSuite.GetReport(packageVersion.VersionId());
                 if (report.TestResult != TestState.Succeeded)
-                    m_ValidateButton.Status = DropdownStatus.Error;
+                    m_ValidateButton.status = DropdownStatus.Error;
                 else
-                    m_ValidateButton.Status = DropdownStatus.Success;
+                    m_ValidateButton.status = DropdownStatus.Success;
 
-                m_ValidateButton.DropdownMenu = CreateStandardDropdown(state => ShowValidationReport());
+                m_ValidateButton.dropdownMenu = CreateStandardDropdown(state => ShowValidationReport());
             }
         }
 
@@ -193,8 +193,8 @@ namespace Unity.PackageManagerUI.Develop.Editor
             {
                 var logFile = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "TryOut", $"{packageId}.tryout.log");
                 var report = JsonUtility.FromJson<TryOutReport>(File.ReadAllText(reportFile));
-                m_TryoutButton.Status = report.exitCode == 0 ? DropdownStatus.Success : DropdownStatus.Error;
-                m_TryoutButton.DropdownMenu = CreateStandardDropdown(state =>
+                m_TryoutButton.status = report.exitCode == 0 ? DropdownStatus.Success : DropdownStatus.Error;
+                m_TryoutButton.dropdownMenu = CreateStandardDropdown(state =>
                 {
                     if (File.Exists(logFile))
                         EditorUtility.OpenWithDefaultApp(logFile);
@@ -204,8 +204,8 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 return;
             }
 
-            m_TryoutButton.Status = DropdownStatus.None;
-            m_TryoutButton.DropdownMenu = null;
+            m_TryoutButton.status = DropdownStatus.None;
+            m_TryoutButton.dropdownMenu = null;
         }
 
         internal void TestClicked()

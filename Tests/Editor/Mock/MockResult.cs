@@ -4,7 +4,8 @@ using NUnit.Framework.Interfaces;
 using UnityEditor.TestTools.TestRunner.Api;
 using TestStatus = UnityEditor.TestTools.TestRunner.Api.TestStatus;
 
-namespace Unity.PackageManagerUI.Develop.Editor.Tests {
+namespace Unity.PackageManagerUI.Develop.Editor.Tests
+{
     class MockResult : ITestResultAdaptor
     {
         public ITestAdaptor Test { get; set; }

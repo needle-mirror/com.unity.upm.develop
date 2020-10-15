@@ -26,17 +26,20 @@ namespace Unity.PackageManagerUI.Develop.Editor
             Add(m_DevelopButton);
         }
 
+        private static bool CanBeEmbedded(IPackageVersion version)
+        {
+            return version != null && version.isInstalled && version.packageInfo?.source == PackageSource.Registry && version.packageInfo.isDirectDependency;
+        }
+
         private void DevelopClick()
         {
             var details = panel.GetRootVisualElement().Q<PackageDetails>("packageDetails");
 
-            if (m_PackageVersion?.HasTag(PackageTag.Embeddable) ?? false)
+            if (CanBeEmbedded(m_PackageVersion))
             {
                 details.detailError.ClearError();
-                PackageDatabase.instance.Embed(m_PackageVersion);
+                Client.Embed(m_PackageVersion.name);
                 details.RefreshPackageActionButtons();
-
-                PackageManagerWindowAnalytics.SendEvent("embed", m_PackageVersion?.uniqueId);
             }
             else
             {
@@ -103,8 +106,6 @@ namespace Unity.PackageManagerUI.Develop.Editor
                     return;
                 }
 
-                PackageManagerWindowAnalytics.SendEvent("clone", m_PackageVersion?.uniqueId);
-
                 details.detailError.ClearError();
                 details.RefreshPackageActionButtons();
 
@@ -114,22 +115,22 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         private void RefreshDevelopButton()
         {
-            var visibleFlag = !m_PackageVersion?.HasTag(PackageTag.InDevelopment) ?? false;
+            var visibleFlag = CanBeEmbedded(m_PackageVersion);
             if (visibleFlag)
             {
-                var enableButton = !EditorApplication.isCompiling && !PackageDatabase.instance.isInstallOrUninstallInProgress && !(m_PackageVersion is AssetStorePackageVersion);
+                var enableButton = !EditorApplication.isCompiling && !PackageDatabase.instance.isInstallOrUninstallInProgress && m_PackageVersion?.packageInfo != null;
                 m_DevelopButton.SetEnabled(enableButton);
                 if (Unsupported.IsDeveloperMode() && m_PackageVersion?.packageInfo?.repository?.url?.Length > 0 && enableButton)
                 {
                     var menu = new GenericMenu();
                     CreateDevelopDropdown(menu, L10n.Tr("Copy to Packages folder"), DevelopClick);
                     CreateDevelopDropdown(menu, L10n.Tr("Clone from git repo"), CloneClick);
-                    m_DevelopButton.DropdownMenu = menu;
+                    m_DevelopButton.dropdownMenu = menu;
                     m_DevelopButton.clickable.clicked += m_DevelopButton.OnDropdownButtonClicked;
                 }
                 else
                 {
-                    m_DevelopButton.DropdownMenu = null;
+                    m_DevelopButton.dropdownMenu = null;
                     m_DevelopButton.clickable.clicked += DevelopClick;
                 }
 
@@ -144,10 +145,10 @@ namespace Unity.PackageManagerUI.Develop.Editor
             menu.AddItem(viewReportItem, false, func);
         }
 
-        public void SetPackage(IPackage package)
+        public void SetPackage(IPackage package, IPackageVersion version)
         {
             m_Package = package;
-            m_PackageVersion = m_Package?.versions?.primary;
+            m_PackageVersion = version;
             RefreshDevelopButton();
         }
     }
