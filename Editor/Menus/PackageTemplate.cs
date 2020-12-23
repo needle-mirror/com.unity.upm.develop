@@ -4,9 +4,11 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditorInternal;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 using TemplateVariables = System.Collections.Generic.Dictionary<string, string>;
 
 namespace Unity.PackageManagerUI.Develop.Editor
@@ -74,6 +76,18 @@ namespace Unity.PackageManagerUI.Develop.Editor
             }
         }
 
+        private static IEnumerable<PackageInfo> GetAllPackagesInfo()
+        {
+            var request = Client.List(false);
+            while (!request.IsCompleted)
+                Thread.Sleep(10);
+
+            if (request.Error != null)
+                return Enumerable.Empty<PackageInfo>();
+
+            return request.Result;
+        }
+
         private static void ValidateOptions(PackageTemplateOptions options)
         {
             var errors = new List<string>();
@@ -82,9 +96,9 @@ namespace Unity.PackageManagerUI.Develop.Editor
             options.name = options.name?.Trim();
             if (string.IsNullOrEmpty(options.name))
                 errors.Add(string.Format(requiredErrorMessage, nameof(options.name)));
-            else if (!PackageValidation.ValidateName(options.name))
+            else if (!Validation.ValidateName(options.name))
                 errors.Add(string.Format(L10n.Tr("Package name [{0}] is invalid"), options.name));
-            else if (UnityEditor.PackageManager.PackageInfo.GetAll().Any(p => p.name == options.name))
+            else if (GetAllPackagesInfo().Any(p => p.name == options.name))
                 errors.Add(string.Format(L10n.Tr("The project already contains a package with the name [{0}]."), options.name));
 
             options.displayName = options.displayName?.Trim();
@@ -126,7 +140,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
         {
             ValidateOptions(options);
 
-            var targetFolder = $"{Folders.GetPackagesPath()}/{options.name}";
+            var targetFolder = $"Packages/{options.name}";
             if (Directory.Exists(targetFolder))
                 throw new InvalidOperationException(string.Format(L10n.Tr("The target folder [{0}] for this new package already exists."), targetFolder));
 

@@ -19,10 +19,10 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
             new UpmPackOperation(packageVersion, destination,
                 tarballPath => Debug.Log("Package saved successfully at: " + tarballPath),
-                error => Debug.LogError("Error: " + error.message));
+                error => Debug.LogError("Error: " + error));
         }
 
-        internal static void Publish(IPackageVersion packageVersion, string destination, Action<string> onSuccess, Action<Error> onError)
+        internal static void Publish(IPackageVersion packageVersion, string destination, Action<string> onSuccess, Action<string> onError)
         {
             new UpmPackOperation(packageVersion, destination, onSuccess, onError);
         }

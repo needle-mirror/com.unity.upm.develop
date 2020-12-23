@@ -3,85 +3,76 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
-using UnityEngine.UIElements;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
-#if UNITY_2020_2_OR_NEWER
     [Serializable]
     internal class PackageObject : ScriptableSingleton<PackageObject>
     {
         public string packageName;
     }
-#endif
-    internal class MenuExtensions : IPackageManagerMenuExtensions
+
+    internal class MenuExtensions : IWindowCreatedHandler
     {
-        public static event Action<bool> onShowDevToolsSet = delegate {};
+        public static event Action<bool> onShowDevToolsSet = delegate { };
 
         private const string k_PackagesFolder = "Packages/";
-        private const string k_AlwaysShowDevTools = "PackageManager.AlwaysShowDevTools";
+        private const string k_AlwaysShowDevToolsPref = "PackageManager.AlwaysShowDevTools";
+
+        private IMenuDropdownItem m_ShowDevelopmentToolsDropdown;
 
         public static bool alwaysShowDevTools
         {
-            get { return EditorPrefs.GetBool(k_AlwaysShowDevTools, false); }
+            get
+            {
+                return EditorPrefs.GetBool(k_AlwaysShowDevToolsPref, false);
+            }
             set
             {
-                EditorPrefs.SetBool(k_AlwaysShowDevTools, value);
+                EditorPrefs.SetBool(k_AlwaysShowDevToolsPref, value);
                 onShowDevToolsSet(value);
             }
         }
 
-        public void OnAdvancedMenuCreate(DropdownMenu menu)
+        public void OnWindowCreated(WindowCreatedArgs args)
         {
-            if (!Unsupported.IsDeveloperMode())
-                return;
-
-            menu.AppendSeparator();
-            menu.AppendAction("Internal/Always show development tools", a =>
+            var defaultName = PackageCreator.GenerateUniquePackageDisplayName("New Package");
+            var createPackageDropdown = args.window.addMenu.AddDropdownItem();
+            createPackageDropdown.text = "Create package...";
+            createPackageDropdown.insertSeparatorBefore = true;
+            createPackageDropdown.action = () =>
             {
-                OnDevelopmentToolToggle();
-            }, a => !Unsupported.IsDeveloperMode() ? DropdownMenuAction.Status.Hidden :
-                alwaysShowDevTools? DropdownMenuAction.Status.Checked: DropdownMenuAction.Status.Normal);
-        }
-
-        public void OnAddMenuCreate(DropdownMenu menu)
-        {
-            menu.AppendSeparator("");
-
-            menu.AppendAction("Create Package...", a =>
-            {
-                var defaultName = PackageCreator.GenerateUniquePackageDisplayName("New Package");
-                var createPackage = new PackagesAction("Create", defaultName);
-                createPackage.actionClicked += displayName =>
+                args.window.addMenu.ShowInputDropdown(new InputDropdownArgs
                 {
-                    createPackage.Hide();
-#if UNITY_2020_2_OR_NEWER
-                    var packageName = PackageCreator.CreatePackage(k_PackagesFolder + displayName).Replace(k_PackagesFolder, "");
-                    PackageObject.instance.packageName = packageName;
-                    Client.Resolve();
-#else
-                    PackageCreator.CreatePackage(k_PackagesFolder + displayName);
-                    AssetDatabase.Refresh();
-                    EditorApplication.delayCall += () => Window.Open(displayName);
-#endif
-                };
+                    title = "Create package",
+                    defaultValue = defaultName,
+                    submitButtonText = "Create",
+                    onInputSubmitted = displayName =>
+                    {
+                        var packageName = PackageCreator.CreatePackage(k_PackagesFolder + displayName).Replace(k_PackagesFolder, "");
+                        PackageObject.instance.packageName = packageName;
+                        Client.Resolve();
+                    }
+                });
+            };
 
-                var parent = EditorWindow.GetWindow<PackageManagerWindow>()
-                    .rootVisualElement.Q<VisualElement>("topMenuToolbar")
-                    .parent;
-                parent.Add(createPackage);
-                createPackage.Show();
-            }, a => DropdownMenuAction.Status.Normal);
+            if (Unsupported.IsDeveloperMode())
+            {
+                m_ShowDevelopmentToolsDropdown = args.window.advancedMenu.AddDropdownItem();
+                m_ShowDevelopmentToolsDropdown.insertSeparatorBefore = true;
+                m_ShowDevelopmentToolsDropdown.text = "Internal/Always show development tools";
+                m_ShowDevelopmentToolsDropdown.action = OnDevelopmentToolToggle;
+                m_ShowDevelopmentToolsDropdown.isChecked = alwaysShowDevTools;
+            }
         }
 
-        public void OnFilterMenuCreate(DropdownMenu menu) {}
-
-        private static void OnDevelopmentToolToggle()
+        private void OnDevelopmentToolToggle()
         {
             alwaysShowDevTools = !alwaysShowDevTools;
+            if (m_ShowDevelopmentToolsDropdown != null)
+                m_ShowDevelopmentToolsDropdown.isChecked = alwaysShowDevTools;
         }
 
-#if UNITY_2020_2_OR_NEWER
         [InitializeOnLoadMethod]
         static void SubscribeToEvent()
         {
@@ -96,6 +87,5 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 PackageObject.instance.packageName = string.Empty;
             }
         }
-#endif
     }
 }

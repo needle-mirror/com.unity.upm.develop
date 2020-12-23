@@ -6,17 +6,12 @@ using UnityEditor.PackageManager.UI;
 using UnityEditor.PackageManager.ValidationSuite;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
-using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
-    internal class PrepareTools : VisualElement
+    internal class PrepareTools : IWindowCreatedHandler, IPackageSelectionChangedHandler, IWindowDestroyHandler
     {
-        private DropdownButton m_TestRunnerButton = new DropdownButton();
-        private DropdownButton m_ValidateButton = new DropdownButton();
-        private DropdownButton m_TryoutButton = new DropdownButton();
-
         // ReSharper disable once ClassNeverInstantiated.Local
         private class TryOutReport
         {
@@ -24,206 +19,146 @@ namespace Unity.PackageManagerUI.Develop.Editor
             public string message;
         }
 
+        private PackageSelectionArgs m_Selection;
+
+        private IPackageActionButton m_TestRunnerButton;
+        private IPackageActionButton m_ValidateButton;
+        private IPackageActionButton m_TryoutButton;
+
+        private IPackageActionDropdownItem m_ViewValidateReport;
+        private IPackageActionDropdownItem m_ViewTryoutReport;
+
         private readonly PackageTestRunner m_PackageTestRunner;
 
-        public event Action onValidate = delegate {};
-
-        internal IPackage package { get; set; }
-
-        internal IPackageVersion packageVersion { get; set; }
-
-        public PrepareTools(IPackage package, IPackageVersion packageVersion, PackageTestRunner packageTestRunner = null)
+        public PrepareTools()
         {
-            ToolbarExtension.SetStyleSheets(this);
-
-            m_PackageTestRunner = packageTestRunner ?? PackageTestRunnerSingleton.instance.packageTestRunner;
-
-            this.package = package;
-            this.packageVersion = packageVersion;
-
-            RefreshDevelopmentButtons();
-
-            SetupTestButton();
-            SetupValidateButton();
-            SetupTryoutButton();
+            m_PackageTestRunner = PackageTestRunnerSingleton.instance.packageTestRunner;
 
             m_PackageTestRunner.Refresh();
-            SetPackageTestRunner();
-
             MenuExtensions.onShowDevToolsSet += OnShowDevToolsSet;
+        }
+
+        public void OnWindowCreated(WindowCreatedArgs args)
+        {
+            var viewReportText = L10n.Tr("View last report...");
+
+            // Test
+            m_TestRunnerButton = args.window.AddPackageActionButton();
+            m_TestRunnerButton.text = L10n.Tr("Test");
+            m_TestRunnerButton.action = TestClicked;
+
+            // Validate
+            m_ValidateButton = args.window.AddPackageActionButton();
+            m_ValidateButton.text = L10n.Tr("Validate");
+            m_ValidateButton.action = ValidateClicked;
+
+            m_ViewValidateReport = m_ValidateButton.AddDropdownItem();
+            m_ViewValidateReport.text = viewReportText;
+            m_ViewValidateReport.action = ShowValidationReport;
+
+            // Try-out
+            m_TryoutButton = args.window.AddPackageActionButton();
+            m_TryoutButton.text = L10n.Tr("Try-out");
+            m_TryoutButton.action = TryoutClicked;
+
+            m_ViewTryoutReport = m_TryoutButton.AddDropdownItem();
+            m_ViewTryoutReport.text = viewReportText;
+            m_ViewTryoutReport.action = ShowTryoutReport;
+        }
+
+        public void OnPackageSelectionChanged(PackageSelectionArgs args)
+        {
+            m_Selection = args;
+            RefreshAllButtons(args.packageVersion);
+        }
+
+        private void RefreshAllButtons(IPackageVersion packageVersion)
+        {
+            var isInDevelopment = packageVersion?.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
+            var shouldShow = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion != null && packageVersion.isInstalled);
+
+            m_TestRunnerButton.visible = shouldShow;
+            m_ValidateButton.visible = shouldShow;
+            m_TryoutButton.visible = shouldShow;
+
+            RefreshValidationStatus(packageVersion);
+            RefreshTryoutStatus(packageVersion);
+
+            ValidationSuiteReportWindow.UpdateIfOpened(packageVersion);
+        }
+
+        public void OnWindowDestroy(WindowDestroyArgs args)
+        {
+            var packageTestRunner = m_PackageTestRunner ?? PackageTestRunnerSingleton.instance.packageTestRunner;
+            packageTestRunner.UnRegisterCallbacks();
         }
 
         private void OnShowDevToolsSet(bool value)
         {
-            RefreshActionsDisplay();
+            RefreshAllButtons(m_Selection.packageVersion);
         }
 
-        public void SetPackage(IPackage package, IPackageVersion packageVersion)
+        internal void ShowValidationReport(PackageSelectionArgs args)
         {
-            this.package = package;
-            this.packageVersion = packageVersion;
-            RefreshDevelopmentButtons();
-            RefreshValidationStatus();
-            RefreshTryoutStatus();
-            ValidationSuiteReportWindow.UpdateIfOpened(packageVersion);
+            ValidationSuiteReportWindow.Open(args.packageVersion);
+            RefreshValidationStatus(args.packageVersion);
         }
 
-        private void SetPackageTestRunner()
+        private void ShowTryoutReport(PackageSelectionArgs args)
         {
-            if (m_PackageTestRunner != null)
-                m_PackageTestRunner.onTestResultsUpdate -= UpdateTestResults;
-
-            m_PackageTestRunner.onTestResultsUpdate += UpdateTestResults;
-        }
-
-        private void UpdateTestResults(bool passed, string packageName)
-        {
-            PackageManagerState.instance.ForPackage(packageName)?.SetTest(passed);
-            RefreshDevelopmentButtons();
-        }
-
-        private void SetupTestButton()
-        {
-            // Always enabled not matter what the publishing target is.
-            m_TestRunnerButton.text = "Test";
-            m_TestRunnerButton.clickable.clicked += TestClicked;
-
-            Add(m_TestRunnerButton);
-        }
-
-        private void SetupValidateButton()
-        {
-            m_ValidateButton.text = "Validate";
-            m_ValidateButton.clickable.clicked += ValidateClicked;
-            RefreshValidationStatus();
-
-            Add(m_ValidateButton);
-        }
-
-        private void SetupTryoutButton()
-        {
-            m_TryoutButton.text = "Try-out";
-            m_TryoutButton.clickable.clicked += TryoutClicked;
-            RefreshTryoutStatus();
-
-            Add(m_TryoutButton);
-        }
-
-        internal void ShowValidationReport()
-        {
-            ValidationSuiteReportWindow.Open(packageVersion);
-            RefreshValidationStatus();
-        }
-
-        private void RefreshDevelopmentButtons(DevelopmentState developmentState = null)
-        {
-            if (packageVersion == null)
-                return;
-
-            var isInDevelopment = packageVersion.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
-            RefreshActionsDisplay();
-
-            if (developmentState == null && isInDevelopment)
-                developmentState = PackageManagerState.instance.ForPackage(packageVersion.name);
-
-            if (developmentState != null && developmentState.packageName == packageVersion.name)
+            string reportFilePath;
+            string logFilePath;
+            GetTryoutReportAndLogPaths(args.packageVersion, out reportFilePath, out logFilePath);
+            if (!string.IsNullOrEmpty(reportFilePath) && File.Exists(reportFilePath))
             {
-                developmentState.onDevelopmentStateUpdate -= RefreshDevelopmentButtons;
-                developmentState.onDevelopmentStateUpdate += RefreshDevelopmentButtons;
-            }
-
-            RefreshActionsStatus(developmentState);
-        }
-
-        private void RefreshActionsDisplay()
-        {
-            if (packageVersion == null)
-                return;
-            var isInDevelopment = packageVersion.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
-            var shouldShow = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion.isInstalled);
-            UIUtils.SetElementDisplay(m_TestRunnerButton, shouldShow);
-            UIUtils.SetElementDisplay(m_ValidateButton, shouldShow);
-            UIUtils.SetElementDisplay(m_TryoutButton, shouldShow);
-        }
-
-        private void RefreshActionsStatus(DevelopmentState developmentState)
-        {
-            if (developmentState?.test != DropdownStatus.None)
-                m_TestRunnerButton.dropdownMenu = CreateStandardDropdown(state => m_PackageTestRunner.ShowTestRunnerWindow());
-            else
-                m_TestRunnerButton.dropdownMenu = null;
-
-            if (developmentState != null)
-                m_TestRunnerButton.status = developmentState.test;
-
-            RefreshValidationStatus();
-            RefreshTryoutStatus();
-        }
-
-        internal void RefreshValidationStatus()
-        {
-            if (packageVersion == null)
-                return;
-
-            if (!ValidationSuite.JsonReportExists(packageVersion.VersionId()))
-            {
-                m_ValidateButton.status = DropdownStatus.None;
-                m_ValidateButton.dropdownMenu = null;
-            }
-            else
-            {
-                var report = ValidationSuite.GetReport(packageVersion.VersionId());
-                if (report.TestResult != TestState.Succeeded)
-                    m_ValidateButton.status = DropdownStatus.Error;
+                var report = JsonUtility.FromJson<TryOutReport>(File.ReadAllText(reportFilePath));
+                if (File.Exists(logFilePath))
+                    EditorUtility.OpenWithDefaultApp(logFilePath);
                 else
-                    m_ValidateButton.status = DropdownStatus.Success;
-
-                m_ValidateButton.dropdownMenu = CreateStandardDropdown(state => ShowValidationReport());
+                    EditorUtility.DisplayDialog($"Try out package {args.packageVersion.VersionId()}", report.message, "Close");
             }
         }
 
-        private void RefreshTryoutStatus()
+        internal void RefreshValidationStatus(IPackageVersion packageVersion)
         {
             if (packageVersion == null)
                 return;
 
-            var packageId = $"{packageVersion.name}-{packageVersion.versionString}";
-            var reportFile = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "TryOut", $"{packageId}.tryout.report");
-            if (File.Exists(reportFile))
+            m_ViewValidateReport.visible = ValidationSuite.JsonReportExists(packageVersion.VersionId());
+        }
+
+        private void RefreshTryoutStatus(IPackageVersion packageVersion)
+        {
+            string reportFilePath;
+            string logFilePath;
+            GetTryoutReportAndLogPaths(packageVersion, out reportFilePath, out logFilePath);
+            m_ViewTryoutReport.visible = !string.IsNullOrEmpty(reportFilePath) && File.Exists(reportFilePath);
+        }
+
+        internal void TestClicked(PackageSelectionArgs args)
+        {
+            m_PackageTestRunner.Test(args.package?.name, TestMode.PlayMode | TestMode.EditMode);
+        }
+
+        private void ValidateClicked(PackageSelectionArgs args)
+        {
+            if (Application.internetReachability == NetworkReachability.NotReachable)
             {
-                var logFile = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "TryOut", $"{packageId}.tryout.log");
-                var report = JsonUtility.FromJson<TryOutReport>(File.ReadAllText(reportFile));
-                m_TryoutButton.status = report.exitCode == 0 ? DropdownStatus.Success : DropdownStatus.Error;
-                m_TryoutButton.dropdownMenu = CreateStandardDropdown(state =>
-                {
-                    if (File.Exists(logFile))
-                        EditorUtility.OpenWithDefaultApp(logFile);
-                    else
-                        EditorUtility.DisplayDialog($"Try out package {packageId}", report.message, "Close");
-                });
+                Debug.LogWarning("Validation suite requires network access and cannot be used offline.");
                 return;
             }
 
-            m_TryoutButton.status = DropdownStatus.None;
-            m_TryoutButton.dropdownMenu = null;
+            ValidationSuite.ValidatePackage(args.packageVersion.VersionId(), ValidationType.LocalDevelopment);
+            ShowValidationReport(args);
         }
 
-        internal void TestClicked()
-        {
-            m_PackageTestRunner.Test(package?.name, TestMode.PlayMode | TestMode.EditMode);
-        }
-
-        private void ValidateClicked()
-        {
-            onValidate();
-        }
-
-        private void TryoutClicked()
+        private void TryoutClicked(PackageSelectionArgs args)
         {
             var destination = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "TryOut");
             if (!Directory.Exists(destination))
                 Directory.CreateDirectory(destination);
 
+            var packageVersion = args.packageVersion;
             var packageId = $"{packageVersion.name}-{packageVersion.versionString}";
             var tarballName = $"{packageId}.tgz";
             var tarballFile = Path.Combine(destination, tarballName);
@@ -281,7 +216,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
                     report.message = message;
 
                     File.WriteAllText(reportFile, JsonUtility.ToJson(report));
-                    RefreshTryoutStatus();
+                    RefreshTryoutStatus(packageVersion);
                     return;
                 }
 
@@ -296,34 +231,35 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
                     File.WriteAllText(reportFile, JsonUtility.ToJson(report));
 
-                    RefreshTryoutStatus();
+                    RefreshTryoutStatus(packageVersion);
                 };
             }, error =>
                 {
-                    Debug.LogError($"[TryOut] Error: {error.message}");
+                    Debug.LogError($"[TryOut] Error: {error}");
                     EditorUtility.ClearProgressBar();
 
-                    report.exitCode = (int)error.errorCode;
-                    report.message = error.message;
+                    report.exitCode = -1;
+                    report.message = error;
 
                     File.WriteAllText(reportFile, JsonUtility.ToJson(report));
 
-                    RefreshTryoutStatus();
+                    RefreshTryoutStatus(packageVersion);
                 });
         }
 
-        private GenericMenu CreateStandardDropdown(Action<DevelopmentState> viewReportAction)
+        private static void GetTryoutReportAndLogPaths(IPackageVersion packageVersion, out string tryoutReportPath, out string tryoutLogPath)
         {
-            var menu = new GenericMenu();
-            var viewReportItem = new GUIContent("View last report...");
-            menu.AddItem(viewReportItem, false, delegate
+            if (packageVersion == null)
             {
-                var state = PackageManagerState.instance.ForPackage(packageVersion.name);
-                if (state != null)
-                    viewReportAction(state);
-            });
+                tryoutReportPath = null;
+                tryoutLogPath = null;
+                return;
+            }
 
-            return menu;
+            var packageId = $"{packageVersion.name}-{packageVersion.versionString}";
+            var tryoutReportFolder = Path.Combine(Directory.GetCurrentDirectory(), "Temp", "TryOut");
+            tryoutReportPath = Path.Combine(tryoutReportFolder, $"{packageId}.tryout.report");
+            tryoutLogPath = Path.Combine(tryoutReportFolder, $"{packageId}.tryout.log");
         }
     }
 }

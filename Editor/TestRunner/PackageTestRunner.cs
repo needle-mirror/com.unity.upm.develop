@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Scripting.ScriptCompilation;
 using UnityEditor.TestTools.TestRunner;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
@@ -16,8 +15,8 @@ namespace Unity.PackageManagerUI.Develop.Editor
         internal const string k_NoTestMessage = "There are no tests in this package. Your package is required to have tests.";
         internal static string s_TestCompleteMessage = "All tests completed!";
 
-        public event Action<bool, string> onTestResultsUpdate = delegate {};
-        public event Action onTestResultsEnded = delegate {};
+        public event Action<bool, string> onTestResultsUpdate = delegate { };
+        public event Action onTestResultsEnded = delegate { };
 
         [NonSerialized]
         private PackageTestResultUpdater m_PackageTestResultUpdater;
@@ -28,9 +27,9 @@ namespace Unity.PackageManagerUI.Develop.Editor
         [SerializeField]
         private TestMode m_Current = 0;
 
-        // Necessary to keep concrete objects in order to serialize and survive domain reload
         [SerializeField]
         private string m_PackageName;
+        public string packageName => m_PackageName;
 
         [SerializeField]
         private int m_TestCaseCount;
@@ -114,36 +113,35 @@ namespace Unity.PackageManagerUI.Develop.Editor
                             Debug.LogWarning("Some tests have failed. Please review the test runner for details.");
                     }
 
-                    onTestResultsUpdate(passed, m_PackageName);
+                    onTestResultsUpdate(passed, packageName);
                     onTestResultsEnded();
                     Reset();
                 }
             }
         }
 
-        IEnumerable<CustomScriptAssemblyData> GetPackageAssemblyNames()
+#pragma warning disable 649
+        [Serializable]
+        private class AssemblyData
         {
-            var packagePath = string.Format("packages/{0}", m_PackageName);
-            if (!Directory.Exists(Path.GetFullPath(packagePath)))
-                return new List<CustomScriptAssemblyData>();
+            public string name;
+        }
+#pragma warning restore 649
 
-            var asmdefPaths = AssetDatabase.FindAssets("t:asmdef", new[] {packagePath});
+        public IEnumerable<string> GetAllPackageTestAssemblies()
+        {
+            var packagePath = string.Format("packages/{0}", packageName);
+            if (!Directory.Exists(Path.GetFullPath(packagePath)))
+                return Enumerable.Empty<string>();
+
+            var asmdefPaths = AssetDatabase.FindAssets("t:asmdef", new[] { packagePath });
             return asmdefPaths.Select(asmdefPath =>
             {
                 var assetPath = AssetDatabase.GUIDToAssetPath(asmdefPath);
                 var asmdef = AssetDatabase.LoadAssetAtPath<UnityEditorInternal.AssemblyDefinitionAsset>(assetPath);
-                var asset = JsonUtility.FromJson<CustomScriptAssemblyData>(asmdef.text);
-                return asset;
+                var asset = JsonUtility.FromJson<AssemblyData>(asmdef.text);
+                return asset.name;
             });
-        }
-
-        /// <summary>
-        /// Get all package assemblies
-        /// </summary>
-        public IEnumerable<string> GetAllPackageTestAssemblies()
-        {
-            return GetPackageAssemblyNames()
-                .Select(a => a.name);
         }
 
         /// <summary>
@@ -199,7 +197,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
         {
             Reset();
             m_PackageName = packageName;
-            
+
             m_TestMode = testMode;
             ShowTestRunnerWindow();
 

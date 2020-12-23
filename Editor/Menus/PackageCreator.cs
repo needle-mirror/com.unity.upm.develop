@@ -6,8 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using UnityEditor;
-using UnityEditor.Connect;
+using System.Threading;
 using UnityEditor.PackageManager;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
@@ -15,22 +14,26 @@ namespace Unity.PackageManagerUI.Develop.Editor
 {
     internal static class PackageCreator
     {
-        private static readonly string k_DefaultOrganizationName = "Undefined";
-        private static readonly string k_DefaultName = "Undefined Package";
+        private const string k_TemplatesPath = "Packages/com.unity.upm.develop/Templates~";
+        private const string k_DefaultOrganizationName = "Undefined";
+        private const string k_DefaultName = "Undefined Package";
+        private const string k_PackagesFolder = "Packages/";
+        private const string k_InvalidFilenameChars = "/?<>\\:*|\"";
 
         private static int s_MaxNameLoop = 5000;
         internal const int k_MaxPackageNameLength = 210; // Max package name length[214] - nDigits(k_MaxNameLoop)[4]
 
-        private static HashSet<string> m_NameSpaces;
+        private static HashSet<string> s_NameSpaces;
+        private static IEnumerable<PackageInfo> s_AllPackages;
 
         public static string CreatePackage(string path)
         {
-            var packagesFolder = Folders.GetPackagesPath() + "/";
-            if (string.IsNullOrEmpty(path) || !path.StartsWith(packagesFolder, StringComparison.InvariantCulture))
+            if (string.IsNullOrEmpty(path) || !path.StartsWith(k_PackagesFolder, StringComparison.InvariantCulture))
                 throw new ArgumentException(nameof(path));
 
-            var organization = UnityConnect.instance.userInfo.valid ? UnityConnect.instance.userInfo.primaryOrg : string.Empty;
-            var options = CreatePackageTemplateOptions(path.Substring(packagesFolder.Length), organization);
+            //TODO: Find a way to get the organization id
+            var organization = string.Empty; //UnityConnect.instance.userInfo.valid ? UnityConnect.instance.userInfo.primaryOrg : string.Empty;
+            var options = CreatePackageTemplateOptions(path.Substring(k_PackagesFolder.Length), organization);
             return PackageTemplate.CreatePackage(options);
         }
 
@@ -51,14 +54,31 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 displayName = packageDisplayName,
                 name = packageName,
                 rootNamespace = rootNamespace,
-                templateFolder = $"{ToolbarExtension.k_TemplatesPath}/standard"
+                templateFolder = $"{k_TemplatesPath}/standard"
             };
         }
 
+        private static IEnumerable<PackageInfo> GetAllPackagesInfo()
+        {
+            if (s_AllPackages != null)
+                return s_AllPackages;
+
+            var request = Client.List(false);
+            while (!request.IsCompleted)
+                Thread.Sleep(10);
+
+            if (request.Error != null)
+                return Enumerable.Empty<PackageInfo>();
+
+            s_AllPackages = request.Result;
+            return s_AllPackages;
+        }
+
+
         internal static string GenerateUniquePackageDisplayName(string displayName)
         {
-            displayName = Regex.Replace(displayName, $@"[{Regex.Escape(EditorUtility.GetInvalidFilenameChars())}]", "_");
-            var allPackagesDisplayNames = PackageInfo.GetAll().Where(info => info.type != "module").Select(info => info.displayName);
+            displayName = Regex.Replace(displayName, $@"[{Regex.Escape(k_InvalidFilenameChars)}]", "_");
+            var allPackagesDisplayNames = GetAllPackagesInfo().Where(info => info.type != "module").Select(info => info.displayName);
             return FindUnique(displayName, allPackagesDisplayNames, " ");
         }
 
@@ -72,7 +92,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 packageName = packageName.Substring(0, k_MaxPackageNameLength);
 
             packageName = packageName.TrimEnd('.');
-            var allPackagesNames = PackageInfo.GetAll().Select(info => info.name);
+            var allPackagesNames = GetAllPackagesInfo().Select(info => info.name);
             return FindUnique(packageName, allPackagesNames);
         }
 
@@ -109,22 +129,22 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 }
             }
 
-            if (m_NameSpaces == null)
+            if (s_NameSpaces == null)
             {
                 var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                m_NameSpaces = new HashSet<string>();
+                s_NameSpaces = new HashSet<string>();
                 foreach (var assembly in assemblies)
                 {
                     var nameSpaces = assembly.GetTypes().Select(t => t.Namespace);
                     foreach (var nameSpace in nameSpaces)
                     {
                         if (!string.IsNullOrEmpty(nameSpace))
-                            m_NameSpaces.Add(nameSpace);
+                            s_NameSpaces.Add(nameSpace);
                     }
                 }
             }
 
-            return FindUnique(rootNamespace, m_NameSpaces);
+            return FindUnique(rootNamespace, s_NameSpaces);
         }
 
         private static string SanitizeName(string name, string defaultName, string pattern, string replacement)

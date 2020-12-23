@@ -5,15 +5,6 @@ namespace Unity.PackageManagerUI.Develop.Editor
 {
     internal static class UIUtils
     {
-        public static void SetElementDisplay(VisualElement element, bool value)
-        {
-            if (element == null)
-                return;
-
-            element.style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
-            element.style.visibility = value ? Visibility.Visible : Visibility.Hidden;
-        }
-
         public static void ScrollIfNeeded(ScrollView container, VisualElement target)
         {
             if (target == null || container == null)

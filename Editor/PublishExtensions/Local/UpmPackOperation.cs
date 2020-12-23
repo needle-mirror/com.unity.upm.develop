@@ -11,11 +11,11 @@ namespace Unity.PackageManagerUI.Develop.Editor
         private string m_Destination { get; set; }
 
         private Action<string> onOperationSuccess;
-        private Action<Error> onOperationError;
+        private Action<string> onOperationError;
 
         private PackRequest m_Request;
 
-        public UpmPackOperation(IPackageVersion packageVersion, string destination, Action<string> doneCallbackAction, Action<Error> errorCallbackAction = null)
+        public UpmPackOperation(IPackageVersion packageVersion, string destination, Action<string> doneCallbackAction, Action<string> errorCallbackAction = null)
         {
             onOperationError += errorCallbackAction;
             onOperationSuccess += doneCallbackAction;
@@ -34,9 +34,9 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 if (m_Request.Status == StatusCode.Success)
                     onOperationSuccess.Invoke(m_Destination);
                 else if (m_Request.Status >= StatusCode.Failure)
-                    onOperationError.Invoke(m_Request.Error);
+                    onOperationError.Invoke(m_Request.Error.message);
                 else
-                    onOperationError.Invoke(new Error(NativeErrorCode.Unknown, "Unsupported progress state " + m_Request.Status));
+                    onOperationError.Invoke("Unsupported progress state " + m_Request.Status);
             }
         }
     }

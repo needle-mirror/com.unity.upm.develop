@@ -1,58 +1,45 @@
 using UnityEditor;
 using UnityEditor.PackageManager.UI;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
-    internal class PublishTools : VisualElement
+    internal class PublishTools : IWindowCreatedHandler, IPackageSelectionChangedHandler
     {
-        private readonly DropdownButton m_PublishButton = new DropdownButton();
+        private PackageSelectionArgs m_Selection;
+        private IPackageActionMenu m_PublishMenu;
 
-        internal IPackage package { get; set; }
-        internal IPackageVersion packageVersion { get; set; }
-
-        public PublishTools()
+        public void OnWindowCreated(WindowCreatedArgs args)
         {
-            ToolbarExtension.SetStyleSheets(this);
-            SetupPublishButton();
-        }
-
-        private void SetupPublishButton()
-        {
-            m_PublishButton.clickable.clicked += () => m_PublishButton.OnDropdownButtonClicked();
-            m_PublishButton.name = "publish";
-            m_PublishButton.text = "Publish";
-            SetupPublishTargetButton();
-            Add(m_PublishButton);
-        }
-
-        private void SetupPublishTargetButton()
-        {
-            var menu = new GenericMenu();
+            m_PublishMenu = args.window.AddPackageActionMenu();
+            m_PublishMenu.text = L10n.Tr("Publish");
+            m_PublishMenu.visible = false;
 
             foreach (var extension in PackageManagerDevelopExtensions.publishExtensions)
             {
-                var label = new GUIContent($"{extension.name}");
-                menu.AddItem(label, false, () => OnPublishClicked(extension));
+                var dropdownItem = m_PublishMenu.AddDropdownItem();
+                dropdownItem.text = extension.name;
+                dropdownItem.action = args => extension?.OnPublish(args.packageVersion);
             }
 
-            m_PublishButton.dropdownMenu = menu;
+            MenuExtensions.onShowDevToolsSet += OnShowDevToolsSet;
         }
 
-        private void OnPublishClicked(IPublishExtension extension)
+        public void OnPackageSelectionChanged(PackageSelectionArgs args)
         {
-            extension?.OnPublish(packageVersion);
+            m_Selection = args;
+            RefreshVisibility();
         }
 
-        public void SetPackage(IPackage package, IPackageVersion packageVersion)
+        private void RefreshVisibility()
         {
-            this.package = package;
-            this.packageVersion = packageVersion;
+            var packageVersion = m_Selection.packageVersion;
             var isInDevelopment = packageVersion?.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
-            var shouldShow = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion != null && packageVersion.isInstalled);
+            m_PublishMenu.visible = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion != null && packageVersion.isInstalled);
+        }
 
-            UIUtils.SetElementDisplay(m_PublishButton, shouldShow);
+        private void OnShowDevToolsSet(bool value)
+        {
+            RefreshVisibility();
         }
     }
 }

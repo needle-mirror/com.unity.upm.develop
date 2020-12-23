@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.PackageManager.UI;
 using UnityEditor.PackageManager.ValidationSuite;
 using UnityEngine;
@@ -9,6 +10,13 @@ namespace Unity.PackageManagerUI.Develop.Editor
 {
     internal class ValidationSuiteReport : VisualElement
     {
+        internal const string k_PackagePath = "Packages/com.unity.upm.develop/";
+        internal const string k_ResourcesPath = k_PackagePath + "Editor/Resources/";
+        private const string k_StylePath = k_ResourcesPath + "Styles/";
+        private const string k_CommonPath = k_StylePath + "Common.uss";
+        private const string k_LightPath = k_StylePath + "Light.uss";
+        private const string k_DarkPath = k_StylePath + "Dark.uss";
+
         private const string k_SelectedClass = "selected";
 
         public event Action<ValidationTestReport> onSelected = delegate {};
@@ -32,7 +40,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         public ValidationSuiteReport()
         {
-            ToolbarExtension.SetStyleSheets(this);
+            SetStyleSheets(this);
 
             name = "validationReport";
             this.StretchToParentSize();
@@ -45,6 +53,19 @@ namespace Unity.PackageManagerUI.Develop.Editor
             RegisterCallback<DetachFromPanelEvent>(e => OnLeavePanel());
 
             OnEnterPanel();
+        }
+
+        private static void SetStyleSheet(VisualElement element, string path)
+        {
+            var styleSheet = EditorGUIUtility.Load(path) as StyleSheet;
+            if (styleSheet != null)
+                element.styleSheets.Add(styleSheet);
+        }
+
+        internal static void SetStyleSheets(VisualElement element)
+        {
+            SetStyleSheet(element, EditorGUIUtility.isProSkin ? k_DarkPath : k_LightPath);
+            SetStyleSheet(element, k_CommonPath);
         }
 
         void OnEnterPanel()
@@ -111,7 +132,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
             this.packageVersion = packageVersion;
 
-            m_Header.text = $"{this.packageVersion.displayName} Validation Report";
+            m_Header.text = $"{this.packageVersion.displayName} Validation Report ({reportData.EndTime})";
             m_ValidationType.text = $"Validation Type: {reportData.Type}";
 
             report = reportData;
