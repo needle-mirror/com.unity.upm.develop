@@ -1,19 +1,27 @@
 {
   "name": "com.unity.upm.develop",
   "displayName": "Package Development",
-  "version": "0.4.0",
-  "unity": "2021.2",
-  "description": "Installs the UPM package development extension. Author new UPM packages and manage them with the new In-Development mode in the Package Manager UI. Publish your packages to a local file, scoped registry or Asset Store",
+  "version": "0.5.0",
+  "unity": "2021.3",
+  "description": "Installs the UPM package development extension. Author new UPM packages and manage them with the new In-Development mode in the Package Manager UI. Publish your packages to a local file",
   "dependencies": {
     "com.unity.test-framework": "1.1.20",
-    "com.unity.package-validation-suite": "0.19.0-preview"
+    "com.unity.package-validation-suite": "0.19.0-preview",
+    "com.unity.nuget.newtonsoft-json": "2.0.2"
+  },
+  "relatedPackages": {
+    "com.unity.upm.develop.tests": "0.5.0"
+  },
+  "_upm": {
+    "changelog": "- Fix console error with Unity 2023.1"
   },
   "upmCi": {
-    "footprint": "bf140d17cea99d80f656539fab01df455cba9669"
+    "footprint": "8f9a51b0507f70ba37b00822b00bd68e7008f5aa"
   },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.upm.develop@0.5/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.upm.develop.git",
     "type": "git",
-    "revision": "47840353e2d1305ba9e5ffa5f6f9625d35cfdb1a"
+    "revision": "5e675d906981447330594971c4fb564a3fe68228"
   }
 }

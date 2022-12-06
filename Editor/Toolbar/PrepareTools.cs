@@ -34,7 +34,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
         {
             m_PackageTestRunner = PackageTestRunnerSingleton.instance.packageTestRunner;
 
-            m_PackageTestRunner.Refresh();
+            m_PackageTestRunner?.Refresh();
             MenuExtensions.onShowDevToolsSet += OnShowDevToolsSet;
         }
 
@@ -74,7 +74,8 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         private void RefreshAllButtons(IPackageVersion packageVersion)
         {
-            var isInDevelopment = packageVersion?.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
+            var isInDevelopment = PackageInfoHelper.GetPackageInfo(packageVersion?.name)?.source == UnityEditor.PackageManager.PackageSource.Embedded || 
+                                  PackageInfoHelper.GetPackageInfo(packageVersion?.name)?.source == UnityEditor.PackageManager.PackageSource.Local;
             var shouldShow = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion != null && packageVersion.isInstalled);
 
             m_TestRunnerButton.visible = shouldShow;
@@ -175,7 +176,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
             var report = new TryOutReport();
             EditorUtility.DisplayProgressBar($"Try out package {packageId}", $"Publish package {packageId} to tarball...", 1.0f);
-            LocalPublishExtension.Publish(packageVersion, destination, path =>
+            LocalPublishExtension.Publish(PackageInfoHelper.GetPackageInfo(args.package.name), destination, path =>
             {
                 var p = new Process();
                 var appPath = EditorApplication.applicationPath;

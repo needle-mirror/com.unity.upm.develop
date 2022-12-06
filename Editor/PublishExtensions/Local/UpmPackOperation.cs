@@ -1,7 +1,6 @@
 using System;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
-using UnityEditor.PackageManager.UI;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
@@ -15,11 +14,12 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         private PackRequest m_Request;
 
-        public UpmPackOperation(IPackageVersion packageVersion, string destination, Action<string> doneCallbackAction, Action<string> errorCallbackAction = null)
+        public UpmPackOperation(PackageInfo packageInfo, string destination, Action<string> doneCallbackAction,
+            Action<string> errorCallbackAction = null)
         {
             onOperationError += errorCallbackAction;
             onOperationSuccess += doneCallbackAction;
-            m_Source = packageVersion.packageInfo.resolvedPath;
+            m_Source = packageInfo.resolvedPath;
             m_Destination = destination;
 
             m_Request = Client.Pack(m_Source, destination);

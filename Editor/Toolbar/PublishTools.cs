@@ -33,7 +33,8 @@ namespace Unity.PackageManagerUI.Develop.Editor
         private void RefreshVisibility()
         {
             var packageVersion = m_Selection.packageVersion;
-            var isInDevelopment = packageVersion?.packageInfo?.source == UnityEditor.PackageManager.PackageSource.Embedded;
+            var isInDevelopment = PackageInfoHelper.GetPackageInfo(packageVersion?.name)?.source == UnityEditor.PackageManager.PackageSource.Embedded || 
+                                  PackageInfoHelper.GetPackageInfo(packageVersion?.name)?.source == UnityEditor.PackageManager.PackageSource.Local;
             m_PublishMenu.visible = isInDevelopment || (MenuExtensions.alwaysShowDevTools && packageVersion != null && packageVersion.isInstalled);
         }
 

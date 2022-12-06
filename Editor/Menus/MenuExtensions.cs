@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
+using PackageInfo = UnityEditor.PackageInfo;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {

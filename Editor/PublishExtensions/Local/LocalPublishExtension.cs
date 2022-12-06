@@ -1,8 +1,8 @@
 using System;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
 using UnityEngine;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
@@ -14,17 +14,19 @@ namespace Unity.PackageManagerUI.Develop.Editor
         public void OnPublish(IPackageVersion packageVersion)
         {
             var destination = EditorUtility.SaveFolderPanel("Select package destination folder", "", "");
+
             if (string.IsNullOrEmpty(destination))
                 return;
 
-            new UpmPackOperation(packageVersion, destination,
+            new UpmPackOperation(PackageInfoHelper.GetPackageInfo(packageVersion.name), destination,
                 tarballPath => Debug.Log("Package saved successfully at: " + tarballPath),
                 error => Debug.LogError("Error: " + error));
         }
 
-        internal static void Publish(IPackageVersion packageVersion, string destination, Action<string> onSuccess, Action<string> onError)
+        internal static void Publish(PackageInfo packageInfo, string destination, Action<string> onSuccess,
+            Action<string> onError)
         {
-            new UpmPackOperation(packageVersion, destination, onSuccess, onError);
+            new UpmPackOperation(packageInfo, destination, onSuccess, onError);
         }
 
         static LocalPublishExtension()

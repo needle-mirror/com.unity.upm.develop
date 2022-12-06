@@ -12,7 +12,6 @@ namespace Unity.PackageManagerUI.Develop.Editor
     [Serializable]
     internal class PackageTestRunner
     {
-        internal const string k_NoTestMessage = "There are no tests in this package. Your package is required to have tests.";
         internal static string s_TestCompleteMessage = "All tests completed!";
 
         public event Action<bool, string> onTestResultsUpdate = delegate { };
@@ -104,13 +103,21 @@ namespace Unity.PackageManagerUI.Develop.Editor
                     //
                     // Test Run is completed
                     if (passed)
-                        Debug.Log(s_TestCompleteMessage + Environment.NewLine + "    " + m_TestCaseCount + " tests were run.");
+                        Debug.Log("All tests passed. " + s_TestCompleteMessage + Environment.NewLine + "    " + m_TestCaseCount + " tests were run.");
                     else
                     {
                         if (m_TestCasePassedCount == 0)
-                            Debug.LogWarning(k_NoTestMessage);
+                        {
+                            var msg =
+                                $"There are no tests in this package ({packageName}). Your package is required to have tests. " +
+                                $"If it does have test and was added by a file reference, then make sure it is also added in the " +
+                                $"'testables' list of the project manifest";
+                            Debug.LogWarning(msg);
+                        }
                         else
-                            Debug.LogWarning("Some tests have failed. Please review the test runner for details.");
+                        {
+                            Debug.LogWarning("Some tests have failed. Please review the test runner for details."); 
+                        }
                     }
 
                     onTestResultsUpdate(passed, packageName);

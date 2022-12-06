@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
 using System.Threading;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
@@ -34,17 +35,24 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         public void OnPackageSelectionChanged(PackageSelectionArgs args)
         {
-            m_DevelopMenu.visible = CanBeEmbedded(args.packageVersion);
+            var packageInfo = PackageInfoHelper.GetPackageInfo(args.package?.name);
+            if (packageInfo == null)
+            {
+                m_DevelopMenu.visible = false;
+                return;
+            }
+            
+            m_DevelopMenu.visible = CanBeEmbedded(args.packageVersion, packageInfo);
         }
 
-        private static bool CanBeEmbedded(IPackageVersion version)
+        private static bool CanBeEmbedded(IPackageVersion version, PackageInfo packageInfo)
         {
-            return version != null && version.isInstalled && version.packageInfo?.source == PackageSource.Registry && version.packageInfo.isDirectDependency;
+            return version != null && version.isInstalled && packageInfo.source == PackageSource.Registry && packageInfo.isDirectDependency;
         }
 
         private void EmbedClicked(PackageSelectionArgs args)
         {
-            if (CanBeEmbedded(args.packageVersion))
+            if (CanBeEmbedded(args.packageVersion, PackageInfoHelper.GetPackageInfo(args.package.name)))
             {
                 Client.Embed(args.packageVersion.name);
             }
@@ -71,14 +79,19 @@ namespace Unity.PackageManagerUI.Develop.Editor
 
         private void CloneClicked(PackageSelectionArgs args)
         {
+            var packageInfo = PackageInfoHelper.GetPackageInfo(args.package.name);
             var packageVersion = args.packageVersion;
-            EditorUtility.DisplayProgressBar($"{L10n.Tr("Cloning")} {packageVersion.displayName}", $"{packageVersion.packageInfo.repository.url}", 1.0f);
+            EditorUtility.DisplayProgressBar($"{L10n.Tr("Cloning")} {packageVersion.displayName}", $"{packageInfo.repository.url}", 1.0f);
 
             var process = new Process();
             process.StartInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
             process.StartInfo.FileName = "git";
             process.StartInfo.WorkingDirectory = k_PackagesFolder;
-            process.StartInfo.Arguments = string.Format("clone {0} {1}", packageVersion.packageInfo.repository.url, packageVersion.packageUniqueId);
+#if UNITY_2023_1_OR_NEWER
+            process.StartInfo.Arguments = string.Format("clone {0} {1}", packageInfo.repository.url, packageVersion.uniqueId);
+#else
+            process.StartInfo.Arguments = string.Format("clone {0} {1}", packageInfo.repository.url, packageVersion.packageUniqueId);
+#endif
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.UseShellExecute = false;
