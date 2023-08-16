@@ -2,8 +2,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using UnityEditor;
+using UnityEditor.PackageManager.AssetStoreValidation.ValidationSuite;
 using UnityEditor.PackageManager.UI;
-using UnityEditor.PackageManager.ValidationSuite;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -149,7 +149,7 @@ namespace Unity.PackageManagerUI.Develop.Editor
                 return;
             }
 
-            ValidationSuite.ValidatePackage(args.packageVersion.VersionId(), ValidationType.LocalDevelopment);
+            ValidationSuite.ValidatePackage(args.packageVersion.VersionId(), ValidationType.AssetStore);
             ShowValidationReport(args);
         }
 

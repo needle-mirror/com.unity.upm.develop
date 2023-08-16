@@ -1,7 +1,7 @@
 using UnityEditor;
+using UnityEditor.PackageManager.AssetStoreValidation.ValidationSuite;
 using UnityEditor.PackageManager.UI;
 using UnityEngine;
-using UnityEditor.PackageManager.ValidationSuite;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using UnityEditor.Connect;
 using UnityEditor.PackageManager;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
@@ -30,9 +31,8 @@ namespace Unity.PackageManagerUI.Develop.Editor
         {
             if (string.IsNullOrEmpty(path) || !path.StartsWith(k_PackagesFolder, StringComparison.InvariantCulture))
                 throw new ArgumentException(nameof(path));
-
-            //TODO: Find a way to get the organization id
-            var organization = string.Empty; //UnityConnect.instance.userInfo.valid ? UnityConnect.instance.userInfo.primaryOrg : string.Empty;
+            
+            var organization = UnityConnect.instance.userInfo.valid ? UnityConnect.instance.userInfo.primaryOrg : string.Empty;
             var options = CreatePackageTemplateOptions(path.Substring(k_PackagesFolder.Length), organization);
             return PackageTemplate.CreatePackage(options);
         }

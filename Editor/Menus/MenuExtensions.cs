@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
-using PackageInfo = UnityEditor.PackageInfo;
 
 namespace Unity.PackageManagerUI.Develop.Editor
 {
@@ -80,13 +79,29 @@ namespace Unity.PackageManagerUI.Develop.Editor
             Events.registeredPackages += RegisteredPackagesEventHandler;
         }
 
+        static void SelectManifest()
+        {
+            var pkgFolder = $"Packages/{PackageObject.instance.packageName}";
+            var manifestPath = $"{pkgFolder}/package.json";
+            var manifest = AssetDatabase.LoadMainAssetAtPath(manifestPath);
+            
+            if (manifest != null)
+            {
+                // Select the package manifest so that it is displayed on the inspector
+                Selection.activeObject = manifest;
+            }
+        }
+
         static void RegisteredPackagesEventHandler(PackageRegistrationEventArgs packageRegistrationEventArgs)
         {
-            if (!string.IsNullOrEmpty(PackageObject.instance.packageName) && packageRegistrationEventArgs.added.Any(package => package.name == PackageObject.instance.packageName))
-            {
-                Window.Open(PackageObject.instance.packageName);
-                PackageObject.instance.packageName = string.Empty;
-            }
+            if (string.IsNullOrEmpty(PackageObject.instance.packageName) || packageRegistrationEventArgs.added.All(package => package.name != PackageObject.instance.packageName))
+                return;
+            
+            // This code could happen before other things are properly initialized (e.g. PackageManagerUI), so
+            // we should avoid having hard dependencies if possible (or delay calls)
+            SelectManifest();
+                
+            PackageObject.instance.packageName = string.Empty;
         }
     }
 }

@@ -1,5 +1,5 @@
 using System;
-using UnityEditor.PackageManager.ValidationSuite;
+using UnityEditor.PackageManager.AssetStoreValidation.ValidationSuite;
 using UnityEditor.TestTools.TestRunner.GUI;
 using UnityEngine;
 using UnityEngine.UIElements;

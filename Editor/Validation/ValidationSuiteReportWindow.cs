@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.PackageManager.AssetStoreValidation.ValidationSuite;
 using UnityEditor.PackageManager.UI;
-using UnityEditor.PackageManager.ValidationSuite;
 using Resources = UnityEngine.Resources;
 
 namespace Unity.PackageManagerUI.Develop.Editor

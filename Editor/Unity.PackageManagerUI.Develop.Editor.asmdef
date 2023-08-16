@@ -1,6 +1,9 @@
 {
     "name": "Unity.PackageManagerUI.Develop.Editor",
-    "references": ["Unity.PackageValidationSuite.Editor"],
+    "rootNamespace": "",
+    "references": [
+        "Unity.asset-store-validation.Editor"
+    ],
     "includePlatforms": [
         "Editor"
     ],
@@ -10,5 +13,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [],
+    "noEngineReferences": false
 }
