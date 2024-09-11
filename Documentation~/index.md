@@ -1,21 +1,40 @@
-# About com.unity.package-manager-ui.develop
+# About Package Development
 
-Use the Package Development package to adds functionalities helping you develop packages for Unity. 
+The Package Development package lets you create and embed packages in Unity. It simplifies the process of developing and managing custom packages within Unity projects, enabling an efficient workflow for package management and customization.
 
-# Installing com.unity.package-manager-ui.develop
+# Installing Package Development
 
-To install this package, follow the instructions in the [Package Manager documentation](https://docs.unity3d.com/Packages/com.unity.package-manager-ui@latest/index.html). 
+To install the **Package Development** package:
 
-<a name="UsingPackageDevelopment"></a>
-# Using com.unity.package-manager-ui.develop
+1. Open the **Package Manager** window (**Window** menu > **Package Manager**).
+2. Click the "+" (plus) button.
+3. Select **Add package by name**.
+4. Enter the name: `com.unity.upm.develop`.
+5. Click **Install** or **Add**, depending on your version of the Unity Editor.
 
-Click on the `Test` button to run all the playmode and editmode tests for the currently selected package.
+# Using Package Development
 
-# Technical details
-## Requirements
+## Create a package
 
-## Document revision history
+    1. Open the **Package Manager** window and click the "+" (plus) button.
+    2. Select **Create package** and enter a name for your package.
+    3. Click **Create** to start the creation of the new package.
+   
+## Select the custom package
+
+After creating or embedding a package, choose the package from the **In Project** list in the **Package Manager** window to begin working with it.
+
+## Use the Extensions buttons
+
+After selecting a package, a set of extension buttons display in the details panel of the **Package Manager** window:
+
+    * **Test**: Run all Play mode and Edit mode tests for the currently selected package.
+    * **Validate**: Perform a validation check to ensure the package meets the required standards for publishing to the Asset Store.
+    * **Try-out**: Experiment with the package functionality in a new, temporary project in a separate Editor. This function lets you test your package without fully committing changes to it. It is especially useful to know if your package dependencies and samples are properly set.
+    * **Publish to disk**: Export the package to disk, creating a local copy that you can share or store for future use.
+
+# Document revision history
  
 |Date|Reason|
-|---|---|
+|September 5, 2024|Document modified. Matches package version 0.5.2-exp.1|
 |March 29, 2019|Document created. Matches package version 0.1.|
