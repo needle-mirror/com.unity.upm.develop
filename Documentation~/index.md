@@ -16,9 +16,9 @@ To install the **Package Development** package:
 
 ## Create a package
 
-    1. Open the **Package Manager** window and click the "+" (plus) button.
-    2. Select **Create package** and enter a name for your package.
-    3. Click **Create** to start the creation of the new package.
+1. Open the **Package Manager** window and click the "+" (plus) button.
+2. Select **Create package** and enter a name for your package.
+3. Click **Create** to start the creation of the new package.
    
 ## Select the custom package
 
@@ -28,13 +28,14 @@ After creating or embedding a package, choose the package from the **In Project*
 
 After selecting a package, a set of extension buttons display in the details panel of the **Package Manager** window:
 
-    * **Test**: Run all Play mode and Edit mode tests for the currently selected package.
-    * **Validate**: Perform a validation check to ensure the package meets the required standards for publishing to the Asset Store.
-    * **Try-out**: Experiment with the package functionality in a new, temporary project in a separate Editor. This function lets you test your package without fully committing changes to it. It is especially useful to know if your package dependencies and samples are properly set.
-    * **Publish to disk**: Export the package to disk, creating a local copy that you can share or store for future use.
+* **Test**: Run all Play mode and Edit mode tests for the currently selected package.
+* **Validate**: Perform a validation check to ensure the package meets the required standards for publishing to the Asset Store.
+* **Try-out**: Experiment with the package functionality in a new, temporary project in a separate Editor. This function lets you test your package without fully committing changes to it. It is especially useful to know if your package dependencies and samples are properly set.
+* **Publish to disk**: Export the package to disk, creating a local copy that you can share or store for future use.
 
 # Document revision history
  
 |Date|Reason|
-|September 5, 2024|Document modified. Matches package version 0.5.2-exp.1|
+|---|---|
+|October 16, 2024|Document modified. Matches package version 0.5.3-exp.1|
 |March 29, 2019|Document created. Matches package version 0.1.|

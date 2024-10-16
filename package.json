@@ -1,7 +1,7 @@
 {
   "name": "com.unity.upm.develop",
   "displayName": "Package Development",
-  "version": "0.5.2-exp.1",
+  "version": "0.5.3-exp.1",
   "unity": "2021.3",
   "description": "Installs the UPM package development extension. Author new UPM packages and manage them with the new In-Development mode in the Package Manager UI. Publish your packages to a local file",
   "dependencies": {
@@ -10,18 +10,18 @@
     "com.unity.nuget.newtonsoft-json": "2.0.2"
   },
   "relatedPackages": {
-    "com.unity.upm.develop.tests": "0.5.2-exp.1"
+    "com.unity.upm.develop.tests": "0.5.3-exp.1"
   },
   "_upm": {
-    "changelog": "### Changed\n\n- Changed documentation"
+    "changelog": "### Fixed\n\n- Fixed documentation indentation"
   },
   "upmCi": {
-    "footprint": "c14cbe6ee1d161e5d00f23322a8aa587e0c69e63"
+    "footprint": "dff819ac3be0c9178bfd11ad5449e20e45983a47"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.upm.develop@0.5/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.upm.develop.git",
     "type": "git",
-    "revision": "ebef220b22f870ca95a279883f42ffcc6e8edc40"
+    "revision": "b58c43a4e9f6fec8aa8c8722812fceac9f87990b"
   }
 }
